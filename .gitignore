@@ -1,0 +1,31 @@
+# Node & Next.js
+node_modules/
+.next/
+out/
+build/
+.npm
+*.tsbuildinfo
+
+# Python & FastAPI
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+.pytest_cache/
+
+# Hardhat & Smart Contracts
+artifacts/
+cache/
+typechain-types/
+coverage/
+coverage.json
+
+# Environment Variables
+.env
+.env.local
+.env.*.local
+
+# OS Files
+.DS_Store
+Thumbs.db

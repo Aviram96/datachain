@@ -1,0 +1,9 @@
+fastapi==0.110.0
+uvicorn==0.29.0
+sqlalchemy==2.0.28
+psycopg2-binary==2.9.9
+web3==6.15.1
+python-dotenv==1.0.1
+python-multipart==0.0.9
+passlib[bcrypt]==1.7.4
+pyjwt==2.8.0
