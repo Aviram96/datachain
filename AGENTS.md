@@ -1,6 +1,6 @@
 # Datachain — Agent & Contributor Guide
 
-This document orients human contributors and automated coding agents to the **Datachain** project: a decentralized, tamper-evident CCTV video management system. Use it together with `roadmap.md` for scope and sequencing.
+This document orients human contributors and automated coding agents to the **Datachain** project: a decentralized, tamper-evident CCTV video management system. Use it together with `ROADMAP.md` for scope and sequencing.
 
 ## Naming conventions (directive)
 
@@ -8,7 +8,7 @@ This document orients human contributors and automated coding agents to the **Da
 
 ### Repository and documentation files
 
-- Use `**AGENTS.md`** (this file), `**README.md`**, and `**roadmap.md`** at the repo root—uppercase primary entry docs are the project standard.
+- Use **`AGENTS.md`** (this file), **`README.md`**, and **`ROADMAP.md`** at the repo root—uppercase primary entry docs are the project standard.
 - Other markdown in `docs/` or similar: `**UPPER_SNAKE_CASE.md**` or `**kebab-case.md**`—pick one pattern per folder and stay consistent.
 
 ### Frontend (`frontend/`) — TypeScript, React, Next.js
@@ -117,7 +117,7 @@ Root-level **Docker Compose** for PostgreSQL (and optional local services) is pa
 - Write commit messages like normal engineering commits: clear subject, optional body explaining *what* and *why*.
 - Use the repository’s normal Git author identity (the configured user name and email). Do not override `--author` to a tool or bot identity unless the maintainer requests it.
 
-If the IDE offers automatic co-author or templated commit footers, **turn those off** for this project or strip those lines before committing.
+If your editor can append co-author trailers to commits, disable that in the editor’s settings (for example, turn off **Git attribution** in Cursor) so commits stay under the human author only—no repo scripts or Git plumbing workarounds are required.
 
 ## Security and secrets
 
@@ -152,7 +152,7 @@ Documentation chapters and UML artifacts are project-book outputs. Code changes 
 
 ## How agents should work
 
-1. Read `roadmap.md` to pick the smallest epic/task that matches the request.
+1. Read `ROADMAP.md` to pick the smallest epic/task that matches the request.
 2. Apply **Naming conventions** above for all new identifiers and files; match existing patterns when editing legacy code.
 3. Prefer incremental PR-sized changes: schema + migration together; API + minimal UI when the story demands both.
 4. For Web3/IPFS, fail loudly in logs, surface safe messages to users, and document env vars.
@@ -166,4 +166,4 @@ Documentation chapters and UML artifacts are project-book outputs. Code changes 
 
 ---
 
-For milestones and full story list, see **`roadmap.md`**.
+For milestones and full story list, see **`ROADMAP.md`**.
