@@ -1,0 +1,17 @@
+{
+  "name": "datachain-contracts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox-viem": "^5.0.4",
+    "@types/node": "^22.10.5",
+    "hardhat": "^3.4.4",
+    "typescript": "~5.8.0",
+    "viem": "^2.47.6"
+  }
+}

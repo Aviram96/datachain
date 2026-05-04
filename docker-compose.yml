@@ -1,0 +1,26 @@
+# Datachain local PostgreSQL (Epic 1).
+# Start: docker compose up -d
+# Stop:  docker compose down
+# Data persists in the named volume until you run: docker compose down -v
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: datachain-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: datachain
+      POSTGRES_PASSWORD: datachain_dev
+      POSTGRES_DB: datachain
+    ports:
+      - "5432:5432"
+    volumes:
+      - datachain_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U datachain -d datachain"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  datachain_pgdata:

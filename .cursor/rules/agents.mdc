@@ -1,0 +1,19 @@
+---
+description: Datachain project standards — follow AGENTS.md and ROADMAP.md
+alwaysApply: true
+---
+
+# Datachain — follow `AGENTS.md`
+
+This repository’s **authoritative agent and contributor guide** is the repo-root **`AGENTS.md`**. Treat it together with **`ROADMAP.md`** as the source of truth for scope, workflow, naming, security, and Git attribution.
+
+**Non-negotiables for the agent:**
+
+- Match **Operating principles** in `AGENTS.md` and **surrounding code style** in the repo.
+- **No default automated verification** in the agent shell (lint/test/build/npm/docker chains) unless the maintainer explicitly asks; **suggest optional local commands** instead. See **No automated verification in agent sessions** in `AGENTS.md`.
+- Before using **Docker** just to run `npm`/Node/Python in-session, **prefer recommending manual steps** on the maintainer’s machine unless the task is about containers or they asked for Docker.
+- **Never** `git add` / `commit` / `push` unless the maintainer **explicitly** requests Git operations in that message.
+- Respect **Human-in-the-loop checkpoints** for non-trivial / multi-step work unless the maintainer waives them for the session.
+- **Git commits and attribution** when you do commit: human author only; no Cursor co-author lines or tool marketing in commits.
+
+When in doubt, open and follow **`AGENTS.md`** before making substantive changes.
