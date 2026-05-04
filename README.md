@@ -73,7 +73,7 @@ After the remaining Epic 1 checkpoints land, you should be able to verify:
 | CI          | Push / open PR; GitHub Actions runs lint and tests                                                                   |
 
 
-**Current checkpoint**: Postgres, **backend**, **frontend**, and **contracts** (**Hardhat 3**). **CI** (GitHub Actions) remains for Epic 1.
+**Current checkpoint**: Epic 1 foundation complete for the current slice — Postgres, **backend**, **frontend**, **contracts** (**Hardhat 3**), and **CI** (`.github/workflows/ci.yml`).
 
 ## License
 

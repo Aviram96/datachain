@@ -8,7 +8,7 @@ Readable explanations of what we use and why—suitable for non-specialists and 
 
 **Why Datachain uses it:** The system handles evidence-related data and a hybrid Web2/Web3 stack; we need an **audit trail of code changes**, safe collaboration, and a single place where the official version of the project lives.
 
-**Where it shows up:** The whole repository; remote history on GitHub; branch workflow described implicitly by how you merge work.
+**Where it shows up:** The whole repository; remote history on GitHub; branch workflow described implicitly by how you merge work. **Continuous integration** jobs live under `.github/workflows/` (for example `ci.yml` runs lint and tests on `main` and related pull requests).
 
 ### Markdown documentation (`README.md`, `ROADMAP.md`, `AGENTS.md`)
 
@@ -172,9 +172,9 @@ Readable explanations of what we use and why—suitable for non-specialists and 
 
 ### npm audit (contracts)
 
-**What it is:** **`npm audit`** reports known security issues in the JavaScript dependency tree; **`npm audit fix`** applies compatible version bumps without breaking semver ranges.
+**What it is:** `**npm audit`** reports known security issues in the JavaScript dependency tree; `**npm audit fix**` applies compatible version bumps without breaking semver ranges.
 
-**Why Datachain mentions it:** The **Hardhat** stack pulls in **transitive** dependencies; some advisory fixes may only appear with **`npm audit fix --force`**, which can jump major versions. Prefer **`npm audit fix`** without `--force` first; review remaining items and upgrade deliberately.
+**Why Datachain mentions it:** The **Hardhat** stack pulls in **transitive** dependencies; some advisory fixes may only appear with `**npm audit fix --force`**, which can jump major versions. Prefer `**npm audit fix**` without `--force` first; review remaining items and upgrade deliberately.
 
 **Where it shows up:** Run from `contracts/`; see `contracts/README.md`.
 

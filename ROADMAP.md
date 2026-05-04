@@ -20,12 +20,12 @@ Keep the **Status** column in this table aligned with the repository as work lan
 | Task | Hardhat environment for Solidity smart contracts                   | Done — **Hardhat 3** (`@nomicfoundation/hardhat-toolbox-viem`); `npm run compile` / `npm test` in `contracts/`        |
 | Task | ESLint and Prettier (frontend)                                     | Done — `frontend/eslint.config.mjs`, Prettier config; scripts in `frontend/README.md`                                 |
 | Task | Black and Flake8 (backend)                                         | Done — `backend/pyproject.toml`, `backend/.flake8`, documented in `backend/README.md`                                 |
-| Task | GitHub Actions workflow for automated testing and linting          | Not started                                                                                                           |
+| Task | GitHub Actions workflow for automated testing and linting          | Done — `.github/workflows/ci.yml` (frontend lint/format/build, backend Black/Flake8, contracts compile/test) on `main` PRs and pushes |
 
 
 **Exit criteria**: Local dev can start DB, run API and frontend, compile contracts, and CI passes lint on sample workflow.
 
-**Progress note**: **Hardhat 3** is in place. Exit criteria are not fully met until **GitHub Actions CI** is implemented; update this epic’s **Status** column as each task completes. Dependency audits: see `contracts/README.md`.
+**Progress note**: Epic 1 **exit criteria met** for the current scaffold: **GitHub Actions** runs on pushes to **`main`** and **pull requests** targeting **`main`** (see `.github/workflows/ci.yml`). Dependency audits: see `contracts/README.md`.
 
 ---
 
