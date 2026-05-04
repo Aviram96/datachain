@@ -1,0 +1,17 @@
+---
+description: Datachain project standards — follow AGENTS.md and ROADMAP.md
+alwaysApply: true
+---
+
+# Datachain — follow `AGENTS.md`
+
+This repository’s **authoritative agent and contributor guide** is the repo-root **`AGENTS.md`**. Treat it together with **`ROADMAP.md`** as the source of truth for scope, workflow, naming, security, and Git attribution.
+
+**Non-negotiables for the agent:**
+
+- Match **Naming conventions** and **Operating principles** in `AGENTS.md`.
+- For applicable work, **run verification yourself** (tests, lint, build, etc.) and **report results**; only fall back to “maintainer must run X” when execution is impossible or unsafe in-session—see **Run verification; report results (agents)** in `AGENTS.md`.
+- Respect **Human-in-the-loop checkpoints** for non-trivial / multi-step work unless the maintainer waives them for the session.
+- **Git commits and attribution**: human author only; no Cursor co-author lines or tool marketing in commits.
+
+When in doubt, open and follow **`AGENTS.md`** before making substantive changes.

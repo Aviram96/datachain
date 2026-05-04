@@ -9,6 +9,7 @@ This document orients human contributors and automated coding agents to the **Da
 - **Smallest production-grade change**: A “thin slice” is the minimal step that is safe for **production-style** operation and aligned with the target architecture (FastAPI, PostgreSQL, IPFS/Pinata, Polygon, Next.js). Do not choose a lower-quality interim if a production-grade approach fits similar scope.
 - **Leverage existing patterns**: Follow established project conventions before introducing new abstractions.
 - **Prove it works**: “Seems right” is not done. Validate with tests, build, and lint per **Technology expectations** and **Testing expectations**, or record explicit manual verification steps when automation is not yet in place.
+- **Run verification; report results (agents)**: Automated coding agents must **run** the relevant checks themselves (tests, lint, format check, build, compile, etc.) using the tools and environment available in the session, then **report outcomes** (pass/fail, key logs, what was skipped). Do **not** default to giving the maintainer a checklist of commands to run on their machine unless execution is **impossible or unsafe** here (for example missing toolchain, no network when required, or destructive operations needing human approval). In those cases, state the blocker clearly, what was still verified, and what remains.
 - **Be explicit about uncertainty**: If something cannot be verified here, say so and propose the safest next step.
 - **Read before write**: Before editing, locate the authoritative source (existing module, pattern, migration, or test).
 - **Control scope creep**: If work surfaces deeper issues, fix only what the task requires; track follow-ups as TODOs or ticket notes.
@@ -39,7 +40,7 @@ For **complex or multi-step** work—anything that would trigger **Plan mode** a
 
 **At each checkpoint:**
 
-- Summarize what was completed, what you propose next, key assumptions, risks, and how to verify the current state (tests, commands, or manual checks).
+- Summarize what was completed, what you propose next, key assumptions, risks, and **verification evidence**: which checks were **executed** (with results), or what blocked execution and what is still unverified.
 
 **Gating rule:**
 
@@ -86,7 +87,7 @@ Use read-only sub-agents proactively for broad or ambiguous discovery to reduce 
 A task is complete when:
 
 - Behavior matches acceptance criteria.
-- Tests, lint, and build pass for affected packages—or there is a documented reason they were not run (for example CI not yet enabled) and manual verification is recorded.
+- Tests, lint, and build pass for affected packages—or there is a documented reason they were not run (for example CI not yet enabled, or agent environment lacks a required toolchain) and **recorded verification** explains what was run vs. skipped and why.
 - Code follows **Naming conventions** and is readable.
 - **Documentation** is updated when warranted (see **Documentation updates** below).
 - A verification story exists: what changed and how we know it works.
@@ -258,6 +259,7 @@ Documentation chapters and UML artifacts are project-book outputs. Code changes 
 4. For complex work, use **Human-in-the-loop checkpoints**: pause for maintainer approval between major sub-tasks unless they waive it for the session.
 5. For Web3/IPFS, fail clearly in logs, return safe errors to clients, and document configuration.
 6. Follow **Git commits and attribution** for every commit and push.
+7. **Execute verification, then report**: run applicable checks for the slice; do not substitute “here are the commands” for actually running them when the environment supports it (see **Run verification; report results (agents)**).
 
 ## Out of scope unless explicitly requested
 
