@@ -1,6 +1,7 @@
 # Datachain frontend
 
-Next.js dashboard (Epic 1 scaffold): **App Router**, **TypeScript**, **Tailwind CSS**, **ESLint**, **Prettier**.
+Next.js dashboard (Epic 1 scaffold): **App Router**, **TypeScript**,
+**Tailwind CSS**, **ESLint**, **Prettier**.
 
 ## Prerequisites
 
@@ -24,7 +25,8 @@ npm install
 | `npm run format`       | Prettier write            |
 | `npm run format:check` | Prettier check (CI-style) |
 
-Dev server defaults to [http://127.0.0.1:3000](http://127.0.0.1:3000).
+Dev server defaults to
+[http://127.0.0.1:3000](http://127.0.0.1:3000).
 
 ## Routes (scaffold)
 

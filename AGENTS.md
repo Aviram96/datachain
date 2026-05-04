@@ -8,8 +8,9 @@ This document orients human contributors and automated coding agents to the **Da
 - **Smallest change that works**: Minimize blast radius; do not refactor adjacent code unless it meaningfully reduces risk for the requested change.
 - **Smallest production-grade change**: A “thin slice” is the minimal step that is safe for **production-style** operation and aligned with the target architecture (FastAPI, PostgreSQL, IPFS/Pinata, Polygon, Next.js). Do not choose a lower-quality interim if a production-grade approach fits similar scope.
 - **Leverage existing patterns**: Follow established project conventions before introducing new abstractions.
-- **Prove it works**: “Seems right” is not done. Validate with tests, build, and lint per **Technology expectations** and **Testing expectations**, or record explicit manual verification steps when automation is not yet in place.
-- **Run verification; report results (agents)**: Automated coding agents must **run** the relevant checks themselves (tests, lint, format check, build, compile, etc.) using the tools and environment available in the session, then **report outcomes** (pass/fail, key logs, what was skipped). Do **not** default to giving the maintainer a checklist of commands to run on their machine unless execution is **impossible or unsafe** here (for example missing toolchain, no network when required, or destructive operations needing human approval). In those cases, state the blocker clearly, what was still verified, and what remains.
+- **Prove it works**: Humans and **CI** should validate changes with tests, lint, and build per **Technology expectations** and **Testing expectations** when that pipeline exists. Until then, rely on **review**, **compiler/typecheck in the IDE**, and **manual runs** the maintainer chooses.
+- **No automated verification in agent sessions (default)**: Automated coding agents must **not** run project verification commands in the shell by default—no **`npm run lint` / `build`**, **`docker run … npm`**, **`pytest`**, **`hardhat test`**, and similar—because agent environments are often incomplete or slow and this becomes a bottleneck. **Trust** the maintainer’s local tooling and the **future CI workflow** (Epic 1) instead. You may **suggest** optional commands for the maintainer to run locally; only run checks yourself if the maintainer **explicitly** asks you to execute them in that session.
+- **Prefer manual steps over Docker in agent sessions**: Before using **Docker** only to get `npm`, `node`, or Python tools working in the agent shell, **stop** and **recommend** that the maintainer run the equivalent on their machine (for example `cd frontend && npm install`). Use Docker in-session only when the maintainer requests it or when the task is **about** containerized workflows.
 - **Be explicit about uncertainty**: If something cannot be verified here, say so and propose the safest next step.
 - **Read before write**: Before editing, locate the authoritative source (existing module, pattern, migration, or test).
 - **Control scope creep**: If work surfaces deeper issues, fix only what the task requires; track follow-ups as TODOs or ticket notes.
@@ -31,7 +32,7 @@ When planning:
 - Restate the goal and acceptance criteria.
 - Locate existing implementation and patterns under `frontend/`, `backend/`, and `contracts/` as they exist in this monorepo.
 - Design the minimal approach with key decisions stated explicitly; name the bar for **security**, **reliability**, **operability**, and readiness for real-world use, consistent with `ROADMAP.md`.
-- Bake **verification** into the plan (tests, lint, build, testnet checks)—not as an afterthought.
+- Note what **humans or CI** will verify (tests, lint, build, testnet checks) once the pipeline exists—not as an afterthought.
 - If new information invalidates the plan: stop, revise the plan, then continue.
 
 ### Human-in-the-loop checkpoints (maintainer approval)
@@ -40,7 +41,7 @@ For **complex or multi-step** work—anything that would trigger **Plan mode** a
 
 **At each checkpoint:**
 
-- Summarize what was completed, what you propose next, key assumptions, risks, and **verification evidence**: which checks were **executed** (with results), or what blocked execution and what is still unverified.
+- Summarize what was completed, what you propose next, key assumptions, risks, and **what the maintainer may want to run locally** (optional commands)—not long automated agent-side verification runs unless they asked for those runs in-session.
 
 **Gating rule:**
 
@@ -77,7 +78,7 @@ Use read-only sub-agents proactively for broad or ambiguous discovery to reduce 
 ### Incremental delivery
 
 - Prefer thin vertical slices over big-bang changes.
-- Land work in small verifiable increments: implement → test → verify → expand.
+- Land work in small reviewable increments: implement → maintainer/CI verify when ready → expand.
 - When the stack supports it, keep risky behavior behind feature flags or configuration switches.
 - Do not trade away production quality for thinness. If two options are similarly scoped, prefer the one closer to the target architecture and stronger operational behavior (retries, timeouts, clear failure modes for IPFS and Web3).
 - If a slice deliberately uses a temporary shortcut, document why, define an explicit follow-up in the same plan, and do not call the work “done” until the quality gap is closed.
@@ -87,10 +88,10 @@ Use read-only sub-agents proactively for broad or ambiguous discovery to reduce 
 A task is complete when:
 
 - Behavior matches acceptance criteria.
-- Tests, lint, and build pass for affected packages—or there is a documented reason they were not run (for example CI not yet enabled, or agent environment lacks a required toolchain) and **recorded verification** explains what was run vs. skipped and why.
+- **Humans**: when practical, run lint/tests/build locally or rely on **CI** once enabled. **Agents** do not need to prove green builds in-session unless the maintainer explicitly requested those runs; state what should be checked and where (package README, CI job).
 - Code follows **Naming conventions** and is readable.
 - **Documentation** is updated when warranted (see **Documentation updates** below).
-- A verification story exists: what changed and how we know it works.
+- A short **completion note** exists: what changed, where it lives, and what to run locally or in CI when ready.
 - **Dependency and migration hygiene** for the slice: Python dependency changes include updated `requirements.txt` or the project’s chosen lockfile strategy and are committed with the change; Node changes in `frontend/` or `contracts/` include updated lockfiles (`package-lock.json`, `pnpm-lock.yaml`, or npm/yarn equivalent—follow whichever the package uses) committed with the change; database model changes include Alembic migrations in the same slice where applicable.
 
 ### When blocked
@@ -105,9 +106,9 @@ Update README, `ROADMAP.md`, `.env.example`, or operator-facing notes when setup
 
 **Roadmap consistency**: When a change completes a roadmap task or materially advances an epic (for example Epic 1 checklist items), **update the relevant epic in `ROADMAP.md`**—especially task **Status** / progress fields—so the file matches what the repo can do. If the epic has no status column yet, add or adjust a short **Progress note** instead.
 
-**Task completion (agents)**: After finishing a requested task or checkpoint, **notify the maintainer** in your response: what changed, where it lives, how it was verified (per **Run verification; report results**), and **which `ROADMAP.md` (or other doc) lines were updated** (if any).
+**Task completion (agents)**: After finishing a requested task or checkpoint, **notify the maintainer** in your response: what changed, where it lives, **optional commands** they can run locally (if helpful), and **which `ROADMAP.md` (or other doc) lines were updated** (if any).
 
-**Plain-language technology notes (project book)**: When a change introduces a **new** technology to the codebase (framework, major library, infrastructure component, blockchain tool, or storage integration), extend **`AGENTS.md` → Plain-language technology guide (project book)** with a **new short subsection** in the same style as existing entries:
+**Plain-language technology notes (project book)**: When a change introduces a **new** technology to the codebase (framework, major library, infrastructure component, blockchain tool, or storage integration), extend **AGENTS.md → Plain-language technology guide (project book)** with a **new short subsection** in the same style as existing entries:
 
 1. **What it is** — explain in everyday language, as if to a reader who is not a developer; spell out acronyms on first use.
 2. **Why Datachain uses it** — tie to the product goal (integrity, evidence, operability, security, or team workflow).
@@ -305,15 +306,55 @@ Root-level **Docker Compose** for PostgreSQL (and optional local services) is pa
 
 ### Cursor project rules (`.cursor/rules`)
 
-**What it is:** **Cursor** is an AI-assisted code editor. **Project rules** are short instructions stored in the repo so the assistant follows this project’s **AGENTS.md** habits (verification, roadmap updates, attribution).
+**What it is:** **Cursor** is an AI-assisted code editor. **Project rules** are short instructions stored in the repo so the assistant follows this project’s **AGENTS.md** habits (roadmap updates, Git policy, attribution).
 
 **Why Datachain uses it:** Keeps automated help aligned with **your** standards—not generic advice—especially for a graded or team project.
 
 **Where it shows up:** `.cursor/rules/agents.mdc`; optional to cite in a project book as “team tooling,” not part of the runtime architecture.
 
+### Next.js
+
+**What it is:** **Next.js** is a **React**-based framework for building **web applications**. It handles **routing** (URLs and pages), **server and client components**, and **production builds** so you get a fast dashboard without wiring everything from scratch.
+
+**Why Datachain uses it:** The product needs a **dashboard** (cameras, videos, verification UI). Next.js matches the roadmap and pairs well with **TypeScript** and **Tailwind** for a maintainable frontend.
+
+**Where it shows up:** `frontend/` (App Router under `frontend/app/`).
+
+### TypeScript
+
+**What it is:** **TypeScript** is **JavaScript** with **static types**: the editor and compiler catch many mistakes (wrong property names, missing fields) before runtime.
+
+**Why Datachain uses it:** As the UI grows, types reduce bugs in API shapes, props, and on-chain verification glue (**ethers.js** later).
+
+**Where it shows up:** `frontend/**/*.tsx`, `frontend/tsconfig.json`.
+
+### Tailwind CSS
+
+**What it is:** **Tailwind CSS** is a **utility-first** styling system: you compose small classes (for example spacing, colors) in markup instead of writing large custom CSS files for every screen.
+
+**Why Datachain uses it:** Fast, consistent UI for dashboards and forms; fits the **Next.js** stack in the roadmap.
+
+**Where it shows up:** `frontend/app/globals.css`, `frontend/tailwind.config.ts`, class names in components.
+
+### ESLint
+
+**What it is:** **ESLint** checks **JavaScript/TypeScript** source for common mistakes and style rules (for example unused variables, risky patterns).
+
+**Why Datachain uses it:** Keeps the React/Next codebase consistent and safer as features accumulate.
+
+**Where it shows up:** `frontend/eslint.config.mjs`; run via `npm run lint` in `frontend/` (see `frontend/README.md`).
+
+### Prettier
+
+**What it is:** **Prettier** is an **opinionated formatter**: it rewrites layout (line breaks, quotes) so formatting is consistent across the team.
+
+**Why Datachain uses it:** Less time debating style; diffs stay focused on behavior.
+
+**Where it shows up:** `frontend/.prettierrc`, `npm run format` / `format:check` in `frontend/README.md`.
+
 ### Technologies on the roadmap but not fully in the repo yet
 
-The product vision also relies on **Next.js** (dashboard), **Tailwind CSS** (styling), **Hardhat** and **Solidity** (smart contracts), **IPFS/Pinata** (video storage), **Polygon** (testnet anchoring), **ethers.js** (browser verification), **SQLAlchemy/Alembic** (database layer in code), and **FFmpeg** (video chunking). These will receive plain-language entries in this section **when they are implemented** in the repository, per **Plain-language technology notes** above.
+The product vision also relies on **Hardhat** and **Solidity** (smart contracts), **IPFS/Pinata** (video storage), **Polygon** (testnet anchoring), **ethers.js** (browser verification), **SQLAlchemy/Alembic** (database layer in code), and **FFmpeg** (video chunking). These will receive plain-language entries in this section **when they are implemented** in the repository, per **Plain-language technology notes** above.
 
 ## Technology expectations
 
@@ -336,6 +377,8 @@ The product vision also relies on **Next.js** (dashboard), **Tailwind CSS** (sty
 ## Git commits and attribution (directive)
 
 **Contributors and automated agents must keep Git history professional and human-attributed.**
+
+- **Agents — no proactive Git operations**: Do **not** run `git add`, `git commit`, or `git push` unless the maintainer **explicitly** asks in that message (for example “commit and push”, “stage the listed files and commit”, or an equivalent clear instruction). Finishing implementation is **not** permission to commit. Wait for explicit Git instructions after the maintainer has reviewed.
 
 - Do **not** add `Co-authored-by:` lines (or any trailer) that credit **Cursor**, **Cursor Agent**, or similar tooling as a commit co-author. Attribution belongs to the repository author unless they explicitly ask otherwise.
 - Do **not** put marketing or tool branding in commits—avoid phrases such as **Made with Cursor**, **Generated with Cursor**, **Co-authored-by: Cursor**, or similar in the **subject** or **body**.
@@ -382,8 +425,8 @@ Documentation chapters and UML artifacts are project-book outputs. Code changes 
 3. Prefer incremental, verifiable slices (**Incremental delivery**): schema with migrations, API changes with tests when present, env vars documented.
 4. For complex work, use **Human-in-the-loop checkpoints**: pause for maintainer approval between major sub-tasks unless they waive it for the session.
 5. For Web3/IPFS, fail clearly in logs, return safe errors to clients, and document configuration.
-6. Follow **Git commits and attribution** for every commit and push.
-7. **Execute verification, then report**: run applicable checks for the slice; do not substitute “here are the commands” for actually running them when the environment supports it (see **Run verification; report results (agents)**).
+6. Follow **Git commits and attribution**: **never** commit or push unless the maintainer explicitly asks in that turn.
+7. **No default automated verification**: do not run lint/test/build/npm/docker verification chains unless the maintainer explicitly asks; suggest optional local commands instead (see **No automated verification in agent sessions**).
 8. **Keep `ROADMAP.md` honest**: when work completes roadmap tasks or advances an epic, update that epic’s status in `ROADMAP.md`; when you finish a maintainer-requested task, say so explicitly and list doc updates (see **Documentation updates**).
 9. **Explain new tech for the project book**: when you introduce a new technology, add a matching subsection under **Plain-language technology guide (project book)** (see **Plain-language technology notes**).
 
@@ -395,4 +438,4 @@ Documentation chapters and UML artifacts are project-book outputs. Code changes 
 
 ---
 
-For milestones and full story list, see `**ROADMAP.md`**.
+For milestones and full story list, see **`ROADMAP.md`**.

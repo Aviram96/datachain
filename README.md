@@ -9,7 +9,7 @@ See `AGENTS.md` for contributor conventions and `ROADMAP.md` for epics.
 
 | Path                 | Role                                                      |
 | -------------------- | --------------------------------------------------------- |
-| `frontend/`          | Next.js app (Epic 1 — scaffold in next checkpoint)        |
+| `frontend/`          | Next.js app — see `frontend/README.md`                    |
 | `backend/`           | FastAPI app — see `backend/README.md`                     |
 | `contracts/`         | Hardhat / Solidity (Epic 1 — scaffold in next checkpoint) |
 | `docker-compose.yml` | Local PostgreSQL                                          |
@@ -18,7 +18,7 @@ See `AGENTS.md` for contributor conventions and `ROADMAP.md` for epics.
 ## Prerequisites
 
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) (or Docker Engine + Compose) for PostgreSQL
-- **Node.js** LTS (for `frontend/` and `contracts/` — documented fully once those packages exist)
+- **Node.js** LTS and **npm** (for `frontend/` — see `frontend/README.md`; `contracts/` when Hardhat lands)
 - **Python 3.11+** (for `backend/` — see `backend/README.md`)
 
 ## Local development — PostgreSQL (Epic 1)
@@ -68,12 +68,12 @@ After the remaining Epic 1 checkpoints land, you should be able to verify:
 | ----------- | -------------------------------------------------------------------------------------------------------------------- |
 | Database    | `docker compose up -d` then `docker compose ps`                                                                      |
 | Backend API | From `backend/`: `uvicorn app.main:app --reload --host 0.0.0.0 --port 8000` then `curl http://127.0.0.1:8000/health` |
-| Frontend    | From `frontend/`: `npm run dev` (or project equivalent)                                                              |
+| Frontend    | From `frontend/`: `npm install` then `npm run dev` (see `frontend/README.md`)                                         |
 | Contracts   | From `contracts/`: `npx hardhat compile`                                                                             |
 | CI          | Push / open PR; GitHub Actions runs lint and tests                                                                   |
 
 
-**Current checkpoint**: Postgres, root layout, and **backend** FastAPI scaffold. Frontend, contracts, and CI are added in subsequent Epic 1 steps.
+**Current checkpoint**: Postgres, root layout, **backend** FastAPI scaffold, and **frontend** Next.js scaffold. **Contracts** (Hardhat) and **CI** remain for Epic 1.
 
 ## License
 
