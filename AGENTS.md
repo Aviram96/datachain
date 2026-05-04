@@ -101,7 +101,11 @@ A task is complete when:
 
 ### Documentation updates
 
-Update README, `ROADMAP.md` (if epics or milestones materially shift), `.env.example`, or operator-facing notes when setup, environment variables, integration boundaries, or publicly observable API behavior changes. Epic 10 academic artifacts follow course rules and are out of scope unless the task explicitly includes them.
+Update README, `ROADMAP.md`, `.env.example`, or operator-facing notes when setup, environment variables, integration boundaries, or publicly observable API behavior changes. Epic 10 academic artifacts follow course rules and are out of scope unless the task explicitly includes them.
+
+**Roadmap consistency**: When a change completes a roadmap task or materially advances an epic (for example Epic 1 checklist items), **update the relevant epic in `ROADMAP.md`**—especially task **Status** / progress fields—so the file matches what the repo can do. If the epic has no status column yet, add or adjust a short **Progress note** instead.
+
+**Task completion (agents)**: After finishing a requested task or checkpoint, **notify the maintainer** in your response: what changed, where it lives, how it was verified (per **Run verification; report results**), and **which `ROADMAP.md` (or other doc) lines were updated** (if any).
 
 ## Naming conventions (directive)
 
@@ -260,6 +264,7 @@ Documentation chapters and UML artifacts are project-book outputs. Code changes 
 5. For Web3/IPFS, fail clearly in logs, return safe errors to clients, and document configuration.
 6. Follow **Git commits and attribution** for every commit and push.
 7. **Execute verification, then report**: run applicable checks for the slice; do not substitute “here are the commands” for actually running them when the environment supports it (see **Run verification; report results (agents)**).
+8. **Keep `ROADMAP.md` honest**: when work completes roadmap tasks or advances an epic, update that epic’s status in `ROADMAP.md`; when you finish a maintainer-requested task, say so explicitly and list doc updates (see **Documentation updates**).
 
 ## Out of scope unless explicitly requested
 
