@@ -1,6 +1,6 @@
 # Plain-language technology guide (project book)
 
-Readable explanations of what we use and why—suitable for non-specialists and for reuse in a project book or report. Maintainers and agents should extend **this document** when new technologies land (see **Plain-language technology notes** under **Documentation updates** in **`AGENTS.md`**).
+Readable explanations of what we use and why—suitable for non-specialists and for reuse in a project book or report. Maintainers and agents should extend **this document** when new technologies land (see **Plain-language technology notes** under **Documentation updates** in `**AGENTS.md`**).
 
 ### Git and GitHub
 
@@ -60,7 +60,7 @@ Readable explanations of what we use and why—suitable for non-specialists and 
 
 ### pip, `requirements.txt`, and `requirements-dev.txt`
 
-**What it is:** **pip** is Python’s standard **package installer**. **`requirements.txt`** lists the libraries the **running app** needs; **`requirements-dev.txt`** adds **developer tools** (here: code formatters and linters) on top of the same base list.
+**What it is:** **pip** is Python’s standard **package installer**. `**requirements.txt`** lists the libraries the **running app** needs; `**requirements-dev.txt`** adds **developer tools** (here: code formatters and linters) on top of the same base list.
 
 **Why Datachain uses it:** Simple, transparent dependency listing that fits coursework and small teams; easy to review in Git diffs.
 
@@ -120,7 +120,7 @@ Readable explanations of what we use and why—suitable for non-specialists and 
 
 **Why Datachain uses it:** As the UI grows, types reduce bugs in API shapes, props, and on-chain verification glue (**ethers.js** later).
 
-**Where it shows up:** `frontend/**/*.tsx`, `frontend/tsconfig.json`.
+**Where it shows up:** `frontend/**/*.tsx`, `frontend/tsconfig.json`; Hardhat config and tests under `contracts/` (`hardhat.config.ts`, `test/`).
 
 ### Tailwind CSS
 
@@ -146,6 +146,38 @@ Readable explanations of what we use and why—suitable for non-specialists and 
 
 **Where it shows up:** `frontend/.prettierrc`, `npm run format` / `format:check` in `frontend/README.md`.
 
+### Hardhat 3 (Hardhat Runner)
+
+**What it is:** **Hardhat** is a **development environment** for Ethereum-style smart contracts: it runs a local simulation for tests, compiles **Solidity**, and loads plugins for verification, deployment (**Hardhat Ignition**), and network helpers. This repository uses **Hardhat 3** with the recommended **Viem**-based toolbox.
+
+**Why Datachain uses it:** We need a **standard, repeatable** way to compile `Datachain.sol`, run automated tests, and later add deploy scripts (Polygon testnet per `ROADMAP.md`) without hand-wiring compilers and test runners.
+
+**Where it shows up:** `contracts/package.json`, `contracts/hardhat.config.ts`, `contracts/test/`; maintainer notes in `contracts/README.md`.
+
+### Viem (in `contracts/` tests and scripts)
+
+**What it is:** **Viem** is a **TypeScript library** for talking to Ethereum-compatible networks: reading state, sending transactions, and working with contract ABIs in a type-safe way.
+
+**Why Datachain uses it:** Hardhat 3’s default toolbox uses Viem (instead of **ethers.js**) for **compile-time** test and script code in `contracts/`. The **Next.js** app can still use **ethers.js** later for wallet and browser verification, as in `ROADMAP.md`—the two libraries serve different layers of the stack.
+
+**Where it shows up:** `contracts/` (via `@nomicfoundation/hardhat-toolbox-viem`); not required in `frontend/` unless you choose to adopt it there.
+
+### Solidity
+
+**What it is:** **Solidity** is a programming language for **smart contracts** that run on blockchains compatible with the Ethereum Virtual Machine (EVM), such as **Polygon**.
+
+**Why Datachain uses it:** On-chain storage is for **anchors and metadata pointers** (for example CIDs), not raw video; Solidity expresses those rules and lets anyone verify what was committed on-chain.
+
+**Where it shows up:** `contracts/contracts/Datachain.sol` (Epic 1 scaffold; logic expands in later epics).
+
+### npm audit (contracts)
+
+**What it is:** **`npm audit`** reports known security issues in the JavaScript dependency tree; **`npm audit fix`** applies compatible version bumps without breaking semver ranges.
+
+**Why Datachain mentions it:** The **Hardhat** stack pulls in **transitive** dependencies; some advisory fixes may only appear with **`npm audit fix --force`**, which can jump major versions. Prefer **`npm audit fix`** without `--force` first; review remaining items and upgrade deliberately.
+
+**Where it shows up:** Run from `contracts/`; see `contracts/README.md`.
+
 ### Technologies on the roadmap but not fully in the repo yet
 
-The product vision also relies on **Hardhat** and **Solidity** (smart contracts), **IPFS/Pinata** (video storage), **Polygon** (testnet anchoring), **ethers.js** (browser verification), **SQLAlchemy/Alembic** (database layer in code), and **FFmpeg** (video chunking). These will receive plain-language entries in **this document** when they are implemented in the repository, per **Plain-language technology notes** in **`AGENTS.md`**.
+The product vision also relies on **IPFS/Pinata** (video storage), **Polygon** (testnet anchoring and live RPC), **ethers.js** (browser verification), **SQLAlchemy/Alembic** (database layer in code), and **FFmpeg** (video chunking). These will receive plain-language entries in **this document** when they are implemented in the repository, per **Plain-language technology notes** in `**AGENTS.md`**.

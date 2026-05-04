@@ -11,14 +11,14 @@ See `AGENTS.md` for contributor conventions and `ROADMAP.md` for epics.
 | -------------------- | --------------------------------------------------------- |
 | `frontend/`          | Next.js app — see `frontend/README.md`                    |
 | `backend/`           | FastAPI app — see `backend/README.md`                     |
-| `contracts/`         | Hardhat / Solidity (Epic 1 — scaffold in next checkpoint) |
+| `contracts/`         | **Hardhat 3** + Solidity (Viem) — see `contracts/README.md` |
 | `docker-compose.yml` | Local PostgreSQL                                          |
 
 
 ## Prerequisites
 
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) (or Docker Engine + Compose) for PostgreSQL
-- **Node.js** LTS and **npm** (for `frontend/` — see `frontend/README.md`; `contracts/` when Hardhat lands)
+- **Node.js** LTS and **npm** (for `frontend/` and `contracts/` — see package READMEs)
 - **Python 3.11+** (for `backend/` — see `backend/README.md`)
 
 ## Local development — PostgreSQL (Epic 1)
@@ -73,7 +73,7 @@ After the remaining Epic 1 checkpoints land, you should be able to verify:
 | CI          | Push / open PR; GitHub Actions runs lint and tests                                                                   |
 
 
-**Current checkpoint**: Postgres, root layout, **backend** FastAPI scaffold, and **frontend** Next.js scaffold. **Contracts** (Hardhat) and **CI** remain for Epic 1.
+**Current checkpoint**: Postgres, **backend**, **frontend**, and **contracts** (**Hardhat 3**). **CI** (GitHub Actions) remains for Epic 1.
 
 ## License
 

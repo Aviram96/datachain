@@ -11,21 +11,21 @@ This roadmap translates the Datachain vision (hybrid Web2/Web3 CCTV integrity pl
 Keep the **Status** column in this table aligned with the repository as work lands (see **Documentation updates** in `AGENTS.md`).
 
 
-| Type | Item                                                               | Status                                                                                  |
-| ---- | ------------------------------------------------------------------ | --------------------------------------------------------------------------------------- |
-| Task | Initialize monorepo structure (`frontend`, `backend`, `contracts`) | Done — `frontend/` scaffolded; `contracts/` awaits Hardhat                              |
-| Task | Next.js boilerplate with Tailwind CSS and routing                  | Done — `frontend/` App Router, Tailwind, `/` and `/project-status`; see `frontend/README.md` |
-| Task | Python FastAPI boilerplate and virtual environment                 | Done — `backend/` (`GET /health`), `requirements.txt`, venv docs in `backend/README.md` |
-| Task | PostgreSQL via Docker Compose                                      | Done — root `docker-compose.yml`, documented in `README.md`                             |
-| Task | Hardhat environment for Solidity smart contracts                   | Not started                                                                             |
-| Task | ESLint and Prettier (frontend)                                     | Done — `frontend/eslint.config.mjs`, Prettier config; scripts in `frontend/README.md`  |
-| Task | Black and Flake8 (backend)                                         | Done — `backend/pyproject.toml`, `backend/.flake8`, documented in `backend/README.md`   |
-| Task | GitHub Actions workflow for automated testing and linting          | Not started                                                                             |
+| Type | Item                                                               | Status                                                                                                                |
+| ---- | ------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| Task | Initialize monorepo structure (`frontend`, `backend`, `contracts`) | Done — all three packages scaffolded; `contracts/` uses **Hardhat 3** (TypeScript, Viem, `node:test`); see `contracts/README.md` |
+| Task | Next.js boilerplate with Tailwind CSS and routing                  | Done — `frontend/` App Router, Tailwind, `/` and `/project-status`; see `frontend/README.md`                          |
+| Task | Python FastAPI boilerplate and virtual environment                 | Done — `backend/` (`GET /health`), `requirements.txt`, venv docs in `backend/README.md`                               |
+| Task | PostgreSQL via Docker Compose                                      | Done — root `docker-compose.yml`, documented in `README.md`                                                           |
+| Task | Hardhat environment for Solidity smart contracts                   | Done — **Hardhat 3** (`@nomicfoundation/hardhat-toolbox-viem`); `npm run compile` / `npm test` in `contracts/`        |
+| Task | ESLint and Prettier (frontend)                                     | Done — `frontend/eslint.config.mjs`, Prettier config; scripts in `frontend/README.md`                                 |
+| Task | Black and Flake8 (backend)                                         | Done — `backend/pyproject.toml`, `backend/.flake8`, documented in `backend/README.md`                                 |
+| Task | GitHub Actions workflow for automated testing and linting          | Not started                                                                                                           |
 
 
 **Exit criteria**: Local dev can start DB, run API and frontend, compile contracts, and CI passes lint on sample workflow.
 
-**Progress note**: Exit criteria are not fully met until **Hardhat** and **GitHub Actions CI** are implemented; update this epic’s **Status** column as each task completes.
+**Progress note**: **Hardhat 3** is in place. Exit criteria are not fully met until **GitHub Actions CI** is implemented; update this epic’s **Status** column as each task completes. Dependency audits: see `contracts/README.md`.
 
 ---
 
