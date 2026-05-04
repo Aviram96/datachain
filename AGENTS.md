@@ -9,7 +9,7 @@ This document orients human contributors and automated coding agents to the **Da
 - **Smallest production-grade change**: A “thin slice” is the minimal step that is safe for **production-style** operation and aligned with the target architecture (FastAPI, PostgreSQL, IPFS/Pinata, Polygon, Next.js). Do not choose a lower-quality interim if a production-grade approach fits similar scope.
 - **Leverage existing patterns**: Follow established project conventions before introducing new abstractions.
 - **Prove it works**: Humans and **CI** should validate changes with tests, lint, and build per **Technology expectations** and **Testing expectations** when that pipeline exists. Until then, rely on **review**, **compiler/typecheck in the IDE**, and **manual runs** the maintainer chooses.
-- **No automated verification in agent sessions (default)**: Automated coding agents must **not** run project verification commands in the shell by default—no **`npm run lint` / `build`**, **`docker run … npm`**, **`pytest`**, **`hardhat test`**, and similar—because agent environments are often incomplete or slow and this becomes a bottleneck. **Trust** the maintainer’s local tooling and the **future CI workflow** (Epic 1) instead. You may **suggest** optional commands for the maintainer to run locally; only run checks yourself if the maintainer **explicitly** asks you to execute them in that session.
+- **No automated verification in agent sessions (default)**: Automated coding agents must **not** run project verification commands in the shell by default—no `**npm run lint` / `build`**, `**docker run … npm`**, `**pytest**`, `**hardhat test**`, and similar—because agent environments are often incomplete or slow and this becomes a bottleneck. **Trust** the maintainer’s local tooling and the **future CI workflow** (Epic 1) instead. You may **suggest** optional commands for the maintainer to run locally; only run checks yourself if the maintainer **explicitly** asks you to execute them in that session.
 - **Prefer manual steps over Docker in agent sessions**: Before using **Docker** only to get `npm`, `node`, or Python tools working in the agent shell, **stop** and **recommend** that the maintainer run the equivalent on their machine (for example `cd frontend && npm install`). Use Docker in-session only when the maintainer requests it or when the task is **about** containerized workflows.
 - **Be explicit about uncertainty**: If something cannot be verified here, say so and propose the safest next step.
 - **Read before write**: Before editing, locate the authoritative source (existing module, pattern, migration, or test).
@@ -89,7 +89,7 @@ A task is complete when:
 
 - Behavior matches acceptance criteria.
 - **Humans**: when practical, run lint/tests/build locally or rely on **CI** once enabled. **Agents** do not need to prove green builds in-session unless the maintainer explicitly requested those runs; state what should be checked and where (package README, CI job).
-- Code follows **Naming conventions** and is readable.
+- Code is readable and **matches surrounding style**; use stack-typical norms (for example **PEP 8** in Python, Next.js/React habits in `frontend/`).
 - **Documentation** is updated when warranted (see **Documentation updates** below).
 - A short **completion note** exists: what changed, where it lives, and what to run locally or in CI when ready.
 - **Dependency and migration hygiene** for the slice: Python dependency changes include updated `requirements.txt` or the project’s chosen lockfile strategy and are committed with the change; Node changes in `frontend/` or `contracts/` include updated lockfiles (`package-lock.json`, `pnpm-lock.yaml`, or npm/yarn equivalent—follow whichever the package uses) committed with the change; database model changes include Alembic migrations in the same slice where applicable.
@@ -108,7 +108,7 @@ Update README, `ROADMAP.md`, `.env.example`, or operator-facing notes when setup
 
 **Task completion (agents)**: After finishing a requested task or checkpoint, **notify the maintainer** in your response: what changed, where it lives, **optional commands** they can run locally (if helpful), and **which `ROADMAP.md` (or other doc) lines were updated** (if any).
 
-**Plain-language technology notes (project book)**: When a change introduces a **new** technology to the codebase (framework, major library, infrastructure component, blockchain tool, or storage integration), extend **AGENTS.md → Plain-language technology guide (project book)** with a **new short subsection** in the same style as existing entries:
+**Plain-language technology notes (project book)**: When a change introduces a **new** technology to the codebase (framework, major library, infrastructure component, blockchain tool, or storage integration), extend **docs/PLAIN_LANGUAGE_TECHNOLOGY.md** with a **new short subsection** in the same style as existing entries:
 
 1. **What it is** — explain in everyday language, as if to a reader who is not a developer; spell out acronyms on first use.
 2. **Why Datachain uses it** — tie to the product goal (integrity, evidence, operability, security, or team workflow).
@@ -116,69 +116,7 @@ Update README, `ROADMAP.md`, `.env.example`, or operator-facing notes when setup
 
 Do not duplicate long vendor marketing; stay factual and reusable for coursework or a **project book** chapter. If the technology is only planned on the roadmap and not yet in the repo, say so and keep the entry brief or add it only when the code lands.
 
-## Naming conventions (directive)
-
-**Contributors and automated agents must follow these conventions** for new files, symbols, and identifiers. When touching existing code, **match the surrounding style**; when adding new modules, **default to the rules below**.
-
-### Repository and documentation files
-
-- Use `**AGENTS.md`** (this file), `**README.md`**, and `**ROADMAP.md`** at the repo root—uppercase primary entry docs are the project standard.
-- Other markdown in `docs/` or similar: `**UPPER_SNAKE_CASE.md**` or `**kebab-case.md**`—pick one pattern per folder and stay consistent.
-
-### Frontend (`frontend/`) — TypeScript, React, Next.js
-
-
-| Kind                          | Convention                  | Examples                                |
-| ----------------------------- | --------------------------- | --------------------------------------- |
-| React components (files)      | `PascalCase.tsx`            | `VideoCard.tsx`, `CameraGrid.tsx`       |
-| Non-component modules (files) | `camelCase.ts`              | `useAuth.ts`, `apiClient.ts`            |
-| App Router special files      | Next.js defaults            | `page.tsx`, `layout.tsx`, `loading.tsx` |
-| Route segment folders         | `kebab-case` (URL-readable) | `my-videos/`, `verify-integrity/`       |
-| Variables, functions, hooks   | `camelCase`                 | `fetchCameras`, `isVerified`            |
-| React components (symbols)    | `PascalCase`                | `function VideoPlayer()`                |
-| Constants (module-level)      | `SCREAMING_SNAKE_CASE`      | `MAX_PAGE_SIZE`                         |
-| Types and interfaces          | `PascalCase`                | `type VideoRecord`, `interface Camera`  |
-
-
-### Backend (`backend/`) — Python
-
-Follow **PEP 8** (Black/Flake8 align with this).
-
-
-| Kind                         | Convention             | Examples                               |
-| ---------------------------- | ---------------------- | -------------------------------------- |
-| Modules (files)              | `snake_case.py`        | `video_processor.py`, `routes/auth.py` |
-| Packages (directories)       | `snake_case`           | `app/`, `services/`                    |
-| Functions, variables, params | `snake_case`           | `anchor_cid_on_chain`, `user_id`       |
-| Classes                      | `PascalCase`           | `class VideoRecord`                    |
-| “Private” helpers            | Leading underscore     | `_hash_password`                       |
-| Constants                    | `SCREAMING_SNAKE_CASE` | `CHUNK_DURATION_SECONDS`               |
-
-
-### Database (SQLAlchemy / PostgreSQL)
-
-- **Table names**: `snake_case`, typically plural — `users`, `cameras`, `video_records`.
-- **Column names**: `snake_case` — `created_at`, `ipfs_cid`, `tx_hash`.
-
-### Smart contracts (`contracts/`) — Solidity
-
-
-| Kind                           | Convention                              | Examples                        |
-| ------------------------------ | --------------------------------------- | ------------------------------- |
-| Contract files                 | `PascalCase.sol` matching contract name | `Datachain.sol`                 |
-| Contracts                      | `PascalCase`                            | `contract Datachain`            |
-| Functions, state vars (public) | `camelCase` is typical                  | `function anchorVideoHash(...)` |
-
-
-### Hardhat / Node scripts
-
-- Scripts and tests: `**camelCase.ts`** or `**kebab-case.ts`**—mirror Hardhat examples in-repo once established; stay consistent within `contracts/`.
-
-### Environment variables
-
-- `**SCREAMING_SNAKE_CASE`** — `DATABASE_URL`, `PINATA_JWT`, `POLYGON_RPC_URL`.
-
----
+**Repository documentation layout**: Keep **AGENTS.md**, **README.md**, and **ROADMAP.md** at the repo root (uppercase primary entry docs). Plain-language technology write-ups live in **docs/PLAIN_LANGUAGE_TECHNOLOGY.md**. Other markdown under `docs/` should follow one naming pattern per folder (**UPPER_SNAKE_CASE.md** or **kebab-case.md**) and stay consistent.
 
 ## Product summary
 
@@ -206,155 +144,7 @@ Root-level **Docker Compose** for PostgreSQL (and optional local services) is pa
 
 ## Plain-language technology guide (project book)
 
-*Readable explanations of what we use and why—suitable for non-specialists and for reuse in a project book or report. Maintainers and agents should extend this section when new technologies land (see **Plain-language technology notes** under **Documentation updates**).*
-
-### Git and GitHub
-
-**What it is:** **Git** is a tool that records every saved version of your project over time, so you can see what changed, compare versions, and go back if something breaks. **GitHub** is a website (and service) that stores a copy of that history online and helps a team share work, review changes, and run automated checks later (for example continuous integration).
-
-**Why Datachain uses it:** The system handles evidence-related data and a hybrid Web2/Web3 stack; we need an **audit trail of code changes**, safe collaboration, and a single place where the official version of the project lives.
-
-**Where it shows up:** The whole repository; remote history on GitHub; branch workflow described implicitly by how you merge work.
-
-### Markdown documentation (`README.md`, `ROADMAP.md`, `AGENTS.md`)
-
-**What it is:** **Markdown** is a simple text format for writing structured documents (headings, lists, tables) that is easy to read as plain text and easy to publish on sites like GitHub.
-
-**Why Datachain uses it:** Everyone—developers, reviewers, and course markers—needs a **single, honest description** of goals (`ROADMAP.md`), how to work on the repo (`AGENTS.md`), and how to run the project locally (`README.md`).
-
-**Where it shows up:** Repository root files; agents keep `ROADMAP.md` status aligned with reality as work progresses.
-
-### Monorepo (one repository, multiple packages)
-
-**What it is:** Instead of many separate codebases, a **monorepo** keeps related parts of one product—here **frontend**, **backend**, and **smart contracts**—in **one Git repository** with clear folders.
-
-**Why Datachain uses it:** The video dashboard, API, and on-chain anchoring are **one product**. One repo reduces version skew (for example API and UI expecting different things), simplifies issue tracking, and matches how small teams ship hybrid Web2/Web3 systems.
-
-**Where it shows up:** Folders `frontend/`, `backend/`, `contracts/` at the repo root.
-
-### Docker and Docker Compose
-
-**What it is:** **Docker** packages an application and its dependencies so it runs the same way on different computers. **Docker Compose** is a small **declaration file** (our `docker-compose.yml`) that says “start these services with these settings”—for example one command brings up a database.
-
-**Why Datachain uses it:** PostgreSQL is required for metadata and future user/camera/video tables. Compose gives every developer the **same database** locally without manual installation steps, which cuts “works on my machine” problems.
-
-**Where it shows up:** `docker-compose.yml` at the repo root; documented in `README.md`.
-
-### PostgreSQL
-
-**What it is:** **PostgreSQL** is a **relational database**: data is stored in tables with relationships (for example “this camera belongs to this user”). It is widely used when you need **reliable, queryable storage** with strong consistency.
-
-**Why Datachain uses it:** Video **files** stay off-chain (IPFS), but the system still needs fast lists, filters, and joins—for users, cameras, CIDs, and transaction hashes. PostgreSQL is the **Web2 index** that makes the product usable day to day; the blockchain provides tamper-evidence, not spreadsheet-speed browsing.
-
-**Where it shows up:** Defined for local dev via Docker Compose; future application schema will live in `backend/` (Epic 2 onward).
-
-### Python
-
-**What it is:** **Python** is a programming language known for clear syntax and a large ecosystem for **web services**, scripting, and integration with multimedia tools.
-
-**Why Datachain uses it:** The **ingest and API layer** (FastAPI), future **FFmpeg** chunking, **IPFS** uploads, and **Web3** calls fit naturally in Python for a single backend service.
-
-**Where it shows up:** `backend/` application code and tooling configuration.
-
-### Virtual environments (`venv`)
-
-**What it is:** A **virtual environment** is an **isolated folder** of Python packages for this project only, so different projects on the same laptop never fight over library versions.
-
-**Why Datachain uses it:** Reproducible installs (“everyone runs the same FastAPI version”) and fewer mysterious errors when coursework deadlines approach.
-
-**Where it shows up:** Documented in `backend/README.md` (create `backend/.venv`, activate, then install requirements).
-
-### pip, `requirements.txt`, and `requirements-dev.txt`
-
-**What it is:** **pip** is Python’s standard **package installer**. **`requirements.txt`** lists the libraries the **running app** needs; **`requirements-dev.txt`** adds **developer tools** (here: code formatters and linters) on top of the same base list.
-
-**Why Datachain uses it:** Simple, transparent dependency listing that fits coursework and small teams; easy to review in Git diffs.
-
-**Where it shows up:** `backend/requirements.txt`, `backend/requirements-dev.txt`.
-
-### FastAPI
-
-**What it is:** **FastAPI** is a Python framework for building **HTTP APIs** (URLs that return **JSON** for programs and browsers to consume). It emphasizes clear structure and automatic **interactive API docs** in the browser during development.
-
-**Why Datachain uses it:** We need a **production-style API** for auth, cameras, video metadata, and pipeline control; FastAPI matches the stack described in the roadmap and pairs well with **async** operations for I/O-bound work (uploads, RPC calls) later.
-
-**Where it shows up:** `backend/app/main.py` defines the app; more routes will be added in later epics.
-
-### Uvicorn
-
-**What it is:** **Uvicorn** is an **application server** that listens for network requests and runs the FastAPI application. Think of FastAPI as the **recipe** and Uvicorn as the **kitchen** that serves requests.
-
-**Why Datachain uses it:** Standard, lightweight way to run FastAPI locally and in deployment; supports modern concurrent request handling.
-
-**Where it shows up:** Started via the command in `backend/README.md` (`uvicorn app.main:app …`).
-
-### Black
-
-**What it is:** **Black** is an automatic **code formatter** for Python: it rewrites layout (indentation, line breaks) so all contributors’ code looks the same.
-
-**Why Datachain uses it:** Saves debate about style and makes reviews focus on **behavior and security**, not spacing.
-
-**Where it shows up:** Configured in `backend/pyproject.toml`; run from `backend/` per `backend/README.md`.
-
-### Flake8
-
-**What it is:** **Flake8** is a **linter**: it analyzes Python source for many common mistakes and style problems **without** running the program.
-
-**Why Datachain uses it:** Catches issues early (unused imports, undefined names) in a project that will grow in surface area (auth, uploads, chain interactions).
-
-**Where it shows up:** `backend/.flake8` and `backend/README.md`.
-
-### Cursor project rules (`.cursor/rules`)
-
-**What it is:** **Cursor** is an AI-assisted code editor. **Project rules** are short instructions stored in the repo so the assistant follows this project’s **AGENTS.md** habits (roadmap updates, Git policy, attribution).
-
-**Why Datachain uses it:** Keeps automated help aligned with **your** standards—not generic advice—especially for a graded or team project.
-
-**Where it shows up:** `.cursor/rules/agents.mdc`; optional to cite in a project book as “team tooling,” not part of the runtime architecture.
-
-### Next.js
-
-**What it is:** **Next.js** is a **React**-based framework for building **web applications**. It handles **routing** (URLs and pages), **server and client components**, and **production builds** so you get a fast dashboard without wiring everything from scratch.
-
-**Why Datachain uses it:** The product needs a **dashboard** (cameras, videos, verification UI). Next.js matches the roadmap and pairs well with **TypeScript** and **Tailwind** for a maintainable frontend.
-
-**Where it shows up:** `frontend/` (App Router under `frontend/app/`).
-
-### TypeScript
-
-**What it is:** **TypeScript** is **JavaScript** with **static types**: the editor and compiler catch many mistakes (wrong property names, missing fields) before runtime.
-
-**Why Datachain uses it:** As the UI grows, types reduce bugs in API shapes, props, and on-chain verification glue (**ethers.js** later).
-
-**Where it shows up:** `frontend/**/*.tsx`, `frontend/tsconfig.json`.
-
-### Tailwind CSS
-
-**What it is:** **Tailwind CSS** is a **utility-first** styling system: you compose small classes (for example spacing, colors) in markup instead of writing large custom CSS files for every screen.
-
-**Why Datachain uses it:** Fast, consistent UI for dashboards and forms; fits the **Next.js** stack in the roadmap.
-
-**Where it shows up:** `frontend/app/globals.css`, `frontend/tailwind.config.ts`, class names in components.
-
-### ESLint
-
-**What it is:** **ESLint** checks **JavaScript/TypeScript** source for common mistakes and style rules (for example unused variables, risky patterns).
-
-**Why Datachain uses it:** Keeps the React/Next codebase consistent and safer as features accumulate.
-
-**Where it shows up:** `frontend/eslint.config.mjs`; run via `npm run lint` in `frontend/` (see `frontend/README.md`).
-
-### Prettier
-
-**What it is:** **Prettier** is an **opinionated formatter**: it rewrites layout (line breaks, quotes) so formatting is consistent across the team.
-
-**Why Datachain uses it:** Less time debating style; diffs stay focused on behavior.
-
-**Where it shows up:** `frontend/.prettierrc`, `npm run format` / `format:check` in `frontend/README.md`.
-
-### Technologies on the roadmap but not fully in the repo yet
-
-The product vision also relies on **Hardhat** and **Solidity** (smart contracts), **IPFS/Pinata** (video storage), **Polygon** (testnet anchoring), **ethers.js** (browser verification), **SQLAlchemy/Alembic** (database layer in code), and **FFmpeg** (video chunking). These will receive plain-language entries in this section **when they are implemented** in the repository, per **Plain-language technology notes** above.
+Readable explanations for non-specialists and project-book reuse live in **docs/PLAIN_LANGUAGE_TECHNOLOGY.md**. Extend that file when new technologies land (see **Plain-language technology notes** under **Documentation updates**).
 
 ## Technology expectations
 
@@ -379,7 +169,6 @@ The product vision also relies on **Hardhat** and **Solidity** (smart contracts)
 **Contributors and automated agents must keep Git history professional and human-attributed.**
 
 - **Agents — no proactive Git operations**: Do **not** run `git add`, `git commit`, or `git push` unless the maintainer **explicitly** asks in that message (for example “commit and push”, “stage the listed files and commit”, or an equivalent clear instruction). Finishing implementation is **not** permission to commit. Wait for explicit Git instructions after the maintainer has reviewed.
-
 - Do **not** add `Co-authored-by:` lines (or any trailer) that credit **Cursor**, **Cursor Agent**, or similar tooling as a commit co-author. Attribution belongs to the repository author unless they explicitly ask otherwise.
 - Do **not** put marketing or tool branding in commits—avoid phrases such as **Made with Cursor**, **Generated with Cursor**, **Co-authored-by: Cursor**, or similar in the **subject** or **body**.
 - Write commit messages like normal engineering commits: clear subject, optional body explaining *what* and *why*.
@@ -420,15 +209,15 @@ Documentation chapters and UML artifacts are project-book outputs. Code changes 
 
 ## Agent quick reference
 
-1. Align work with **`ROADMAP.md`** and this file (**Operating principles**, **Agent workflow**).
-2. Apply **Naming conventions** for new code; match surrounding patterns when editing existing files.
+1. Align work with **ROADMAP.md** and this file (**Operating principles**, **Agent workflow**).
+2. Match **surrounding style** in existing code; use stack-typical norms for new modules (see **Definition of done**).
 3. Prefer incremental, verifiable slices (**Incremental delivery**): schema with migrations, API changes with tests when present, env vars documented.
 4. For complex work, use **Human-in-the-loop checkpoints**: pause for maintainer approval between major sub-tasks unless they waive it for the session.
 5. For Web3/IPFS, fail clearly in logs, return safe errors to clients, and document configuration.
 6. Follow **Git commits and attribution**: **never** commit or push unless the maintainer explicitly asks in that turn.
 7. **No default automated verification**: do not run lint/test/build/npm/docker verification chains unless the maintainer explicitly asks; suggest optional local commands instead (see **No automated verification in agent sessions**).
 8. **Keep `ROADMAP.md` honest**: when work completes roadmap tasks or advances an epic, update that epic’s status in `ROADMAP.md`; when you finish a maintainer-requested task, say so explicitly and list doc updates (see **Documentation updates**).
-9. **Explain new tech for the project book**: when you introduce a new technology, add a matching subsection under **Plain-language technology guide (project book)** (see **Plain-language technology notes**).
+9. **Explain new tech for the project book**: when you introduce a new technology, add a matching subsection in **docs/PLAIN_LANGUAGE_TECHNOLOGY.md** (see **Plain-language technology notes**).
 
 ## Out of scope unless explicitly requested
 
@@ -438,4 +227,4 @@ Documentation chapters and UML artifacts are project-book outputs. Code changes 
 
 ---
 
-For milestones and full story list, see **`ROADMAP.md`**.
+For milestones and full story list, see **ROADMAP.md**.

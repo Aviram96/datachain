@@ -9,7 +9,7 @@ This repository’s **authoritative agent and contributor guide** is the repo-ro
 
 **Non-negotiables for the agent:**
 
-- Match **Naming conventions** and **Operating principles** in `AGENTS.md`.
+- Match **Operating principles** in `AGENTS.md` and **surrounding code style** in the repo.
 - **No default automated verification** in the agent shell (lint/test/build/npm/docker chains) unless the maintainer explicitly asks; **suggest optional local commands** instead. See **No automated verification in agent sessions** in `AGENTS.md`.
 - Before using **Docker** just to run `npm`/Node/Python in-session, **prefer recommending manual steps** on the maintainer’s machine unless the task is about containers or they asked for Docker.
 - **Never** `git add` / `commit` / `push` unless the maintainer **explicitly** requests Git operations in that message.

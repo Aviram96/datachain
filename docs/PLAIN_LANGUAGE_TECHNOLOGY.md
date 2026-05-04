@@ -1,0 +1,151 @@
+# Plain-language technology guide (project book)
+
+Readable explanations of what we use and why—suitable for non-specialists and for reuse in a project book or report. Maintainers and agents should extend **this document** when new technologies land (see **Plain-language technology notes** under **Documentation updates** in **`AGENTS.md`**).
+
+### Git and GitHub
+
+**What it is:** **Git** is a tool that records every saved version of your project over time, so you can see what changed, compare versions, and go back if something breaks. **GitHub** is a website (and service) that stores a copy of that history online and helps a team share work, review changes, and run automated checks later (for example continuous integration).
+
+**Why Datachain uses it:** The system handles evidence-related data and a hybrid Web2/Web3 stack; we need an **audit trail of code changes**, safe collaboration, and a single place where the official version of the project lives.
+
+**Where it shows up:** The whole repository; remote history on GitHub; branch workflow described implicitly by how you merge work.
+
+### Markdown documentation (`README.md`, `ROADMAP.md`, `AGENTS.md`)
+
+**What it is:** **Markdown** is a simple text format for writing structured documents (headings, lists, tables) that is easy to read as plain text and easy to publish on sites like GitHub.
+
+**Why Datachain uses it:** Everyone—developers, reviewers, and course markers—needs a **single, honest description** of goals (`ROADMAP.md`), how to work on the repo (`AGENTS.md`), and how to run the project locally (`README.md`).
+
+**Where it shows up:** Repository root files; agents keep `ROADMAP.md` status aligned with reality as work progresses.
+
+### Monorepo (one repository, multiple packages)
+
+**What it is:** Instead of many separate codebases, a **monorepo** keeps related parts of one product—here **frontend**, **backend**, and **smart contracts**—in **one Git repository** with clear folders.
+
+**Why Datachain uses it:** The video dashboard, API, and on-chain anchoring are **one product**. One repo reduces version skew (for example API and UI expecting different things), simplifies issue tracking, and matches how small teams ship hybrid Web2/Web3 systems.
+
+**Where it shows up:** Folders `frontend/`, `backend/`, `contracts/` at the repo root.
+
+### Docker and Docker Compose
+
+**What it is:** **Docker** packages an application and its dependencies so it runs the same way on different computers. **Docker Compose** is a small **declaration file** (our `docker-compose.yml`) that says “start these services with these settings”—for example one command brings up a database.
+
+**Why Datachain uses it:** PostgreSQL is required for metadata and future user/camera/video tables. Compose gives every developer the **same database** locally without manual installation steps, which cuts “works on my machine” problems.
+
+**Where it shows up:** `docker-compose.yml` at the repo root; documented in `README.md`.
+
+### PostgreSQL
+
+**What it is:** **PostgreSQL** is a **relational database**: data is stored in tables with relationships (for example “this camera belongs to this user”). It is widely used when you need **reliable, queryable storage** with strong consistency.
+
+**Why Datachain uses it:** Video **files** stay off-chain (IPFS), but the system still needs fast lists, filters, and joins—for users, cameras, CIDs, and transaction hashes. PostgreSQL is the **Web2 index** that makes the product usable day to day; the blockchain provides tamper-evidence, not spreadsheet-speed browsing.
+
+**Where it shows up:** Defined for local dev via Docker Compose; future application schema will live in `backend/` (Epic 2 onward).
+
+### Python
+
+**What it is:** **Python** is a programming language known for clear syntax and a large ecosystem for **web services**, scripting, and integration with multimedia tools.
+
+**Why Datachain uses it:** The **ingest and API layer** (FastAPI), future **FFmpeg** chunking, **IPFS** uploads, and **Web3** calls fit naturally in Python for a single backend service.
+
+**Where it shows up:** `backend/` application code and tooling configuration.
+
+### Virtual environments (`venv`)
+
+**What it is:** A **virtual environment** is an **isolated folder** of Python packages for this project only, so different projects on the same laptop never fight over library versions.
+
+**Why Datachain uses it:** Reproducible installs (“everyone runs the same FastAPI version”) and fewer mysterious errors when coursework deadlines approach.
+
+**Where it shows up:** Documented in `backend/README.md` (create `backend/.venv`, activate, then install requirements).
+
+### pip, `requirements.txt`, and `requirements-dev.txt`
+
+**What it is:** **pip** is Python’s standard **package installer**. **`requirements.txt`** lists the libraries the **running app** needs; **`requirements-dev.txt`** adds **developer tools** (here: code formatters and linters) on top of the same base list.
+
+**Why Datachain uses it:** Simple, transparent dependency listing that fits coursework and small teams; easy to review in Git diffs.
+
+**Where it shows up:** `backend/requirements.txt`, `backend/requirements-dev.txt`.
+
+### FastAPI
+
+**What it is:** **FastAPI** is a Python framework for building **HTTP APIs** (URLs that return **JSON** for programs and browsers to consume). It emphasizes clear structure and automatic **interactive API docs** in the browser during development.
+
+**Why Datachain uses it:** We need a **production-style API** for auth, cameras, video metadata, and pipeline control; FastAPI matches the stack described in the roadmap and pairs well with **async** operations for I/O-bound work (uploads, RPC calls) later.
+
+**Where it shows up:** `backend/app/main.py` defines the app; more routes will be added in later epics.
+
+### Uvicorn
+
+**What it is:** **Uvicorn** is an **application server** that listens for network requests and runs the FastAPI application. Think of FastAPI as the **recipe** and Uvicorn as the **kitchen** that serves requests.
+
+**Why Datachain uses it:** Standard, lightweight way to run FastAPI locally and in deployment; supports modern concurrent request handling.
+
+**Where it shows up:** Started via the command in `backend/README.md` (`uvicorn app.main:app …`).
+
+### Black
+
+**What it is:** **Black** is an automatic **code formatter** for Python: it rewrites layout (indentation, line breaks) so all contributors’ code looks the same.
+
+**Why Datachain uses it:** Saves debate about style and makes reviews focus on **behavior and security**, not spacing.
+
+**Where it shows up:** Configured in `backend/pyproject.toml`; run from `backend/` per `backend/README.md`.
+
+### Flake8
+
+**What it is:** **Flake8** is a **linter**: it analyzes Python source for many common mistakes and style problems **without** running the program.
+
+**Why Datachain uses it:** Catches issues early (unused imports, undefined names) in a project that will grow in surface area (auth, uploads, chain interactions).
+
+**Where it shows up:** `backend/.flake8` and `backend/README.md`.
+
+### Cursor project rules (`.cursor/rules`)
+
+**What it is:** **Cursor** is an AI-assisted code editor. **Project rules** are short instructions stored in the repo so the assistant follows this project’s **AGENTS.md** habits (roadmap updates, Git policy, attribution).
+
+**Why Datachain uses it:** Keeps automated help aligned with **your** standards—not generic advice—especially for a graded or team project.
+
+**Where it shows up:** `.cursor/rules/agents.mdc`; optional to cite in a project book as “team tooling,” not part of the runtime architecture.
+
+### Next.js
+
+**What it is:** **Next.js** is a **React**-based framework for building **web applications**. It handles **routing** (URLs and pages), **server and client components**, and **production builds** so you get a fast dashboard without wiring everything from scratch.
+
+**Why Datachain uses it:** The product needs a **dashboard** (cameras, videos, verification UI). Next.js matches the roadmap and pairs well with **TypeScript** and **Tailwind** for a maintainable frontend.
+
+**Where it shows up:** `frontend/` (App Router under `frontend/app/`).
+
+### TypeScript
+
+**What it is:** **TypeScript** is **JavaScript** with **static types**: the editor and compiler catch many mistakes (wrong property names, missing fields) before runtime.
+
+**Why Datachain uses it:** As the UI grows, types reduce bugs in API shapes, props, and on-chain verification glue (**ethers.js** later).
+
+**Where it shows up:** `frontend/**/*.tsx`, `frontend/tsconfig.json`.
+
+### Tailwind CSS
+
+**What it is:** **Tailwind CSS** is a **utility-first** styling system: you compose small classes (for example spacing, colors) in markup instead of writing large custom CSS files for every screen.
+
+**Why Datachain uses it:** Fast, consistent UI for dashboards and forms; fits the **Next.js** stack in the roadmap.
+
+**Where it shows up:** `frontend/app/globals.css`, `frontend/tailwind.config.ts`, class names in components.
+
+### ESLint
+
+**What it is:** **ESLint** checks **JavaScript/TypeScript** source for common mistakes and style rules (for example unused variables, risky patterns).
+
+**Why Datachain uses it:** Keeps the React/Next codebase consistent and safer as features accumulate.
+
+**Where it shows up:** `frontend/eslint.config.mjs`; run via `npm run lint` in `frontend/` (see `frontend/README.md`).
+
+### Prettier
+
+**What it is:** **Prettier** is an **opinionated formatter**: it rewrites layout (line breaks, quotes) so formatting is consistent across the team.
+
+**Why Datachain uses it:** Less time debating style; diffs stay focused on behavior.
+
+**Where it shows up:** `frontend/.prettierrc`, `npm run format` / `format:check` in `frontend/README.md`.
+
+### Technologies on the roadmap but not fully in the repo yet
+
+The product vision also relies on **Hardhat** and **Solidity** (smart contracts), **IPFS/Pinata** (video storage), **Polygon** (testnet anchoring), **ethers.js** (browser verification), **SQLAlchemy/Alembic** (database layer in code), and **FFmpeg** (video chunking). These will receive plain-language entries in **this document** when they are implemented in the repository, per **Plain-language technology notes** in **`AGENTS.md`**.
