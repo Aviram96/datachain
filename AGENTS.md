@@ -2,13 +2,113 @@
 
 This document orients human contributors and automated coding agents to the **Datachain** project: a decentralized, tamper-evident CCTV video management system. Use it together with `ROADMAP.md` for scope and sequencing.
 
+## Operating principles (agent behavior)
+
+- **Correctness over cleverness**: Prefer boring, readable solutions that are easy to maintain.
+- **Smallest change that works**: Minimize blast radius; do not refactor adjacent code unless it meaningfully reduces risk for the requested change.
+- **Smallest production-grade change**: A “thin slice” is the minimal step that is safe for **production-style** operation and aligned with the target architecture (FastAPI, PostgreSQL, IPFS/Pinata, Polygon, Next.js). Do not choose a lower-quality interim if a production-grade approach fits similar scope.
+- **Leverage existing patterns**: Follow established project conventions before introducing new abstractions.
+- **Prove it works**: “Seems right” is not done. Validate with tests, build, and lint per **Technology expectations** and **Testing expectations**, or record explicit manual verification steps when automation is not yet in place.
+- **Be explicit about uncertainty**: If something cannot be verified here, say so and propose the safest next step.
+- **Read before write**: Before editing, locate the authoritative source (existing module, pattern, migration, or test).
+- **Control scope creep**: If work surfaces deeper issues, fix only what the task requires; track follow-ups as TODOs or ticket notes.
+- **Human-in-the-loop on complex work**: For multi-step or plan-mode tasks, pause at logical checkpoints for maintainer review and **explicit approval** before the next chunk—see **Human-in-the-loop checkpoints** under **Agent workflow** (unless the maintainer waives this for a session).
+
+## Agent workflow
+
+### Plan mode (default for non-trivial work)
+
+Enter structured planning for work that involves:
+
+- Three or more steps or multi-file edits
+- Architectural decisions or new patterns
+- Production-impacting behavior (authentication, anchoring, integrity verification, storage pipeline)
+- Ambiguous requirements
+
+When planning:
+
+- Restate the goal and acceptance criteria.
+- Locate existing implementation and patterns under `frontend/`, `backend/`, and `contracts/` as they exist in this monorepo.
+- Design the minimal approach with key decisions stated explicitly; name the bar for **security**, **reliability**, **operability**, and readiness for real-world use, consistent with `ROADMAP.md`.
+- Bake **verification** into the plan (tests, lint, build, testnet checks)—not as an afterthought.
+- If new information invalidates the plan: stop, revise the plan, then continue.
+
+### Human-in-the-loop checkpoints (maintainer approval)
+
+For **complex or multi-step** work—anything that would trigger **Plan mode** above, multi-epic slices, or other non-trivial changes—agents must use **phase gates** so the maintainer can confirm shared understanding before the next chunk of implementation.
+
+**At each checkpoint:**
+
+- Summarize what was completed, what you propose next, key assumptions, risks, and how to verify the current state (tests, commands, or manual checks).
+
+**Gating rule:**
+
+- Do **not** start the next major sub-task until the maintainer gives **explicit approval** (for example: “go ahead”, “approved”, or an equivalent unambiguous signal).
+- If the maintainer asks for changes, revise the plan or implementation and **wait for approval again** before proceeding past the next gate.
+
+Treat this rhythm as **part of the workflow**, not optional—unless the maintainer clearly opts out for a specific session (for example: “no checkpoints; run through Epic 1 in one pass”).
+
+This complements **When blocked** (one targeted question during work); checkpoints are for **review between chunks** of larger work.
+
+### Sub-agent exploration protocol
+
+Use read-only sub-agents proactively for broad or ambiguous discovery to reduce context pressure and allow parallel investigation.
+
+**When to use**
+
+- Multi-file architecture analysis across docs and code
+- Cross-cutting impact (security, SQL schema contracts, alignment with `ROADMAP.md`)
+- Large search or pattern exploration where one pass may miss edge cases
+
+**How to use**
+
+- Launch several parallel read-only explorations, each with a narrow scope.
+- Ask each for findings, missing pieces, contradictions, and concrete file targets.
+- Synthesize results in the parent thread before making edits.
+- Keep implementation in the parent agent unless delegation is clearly safer.
+
+**Guardrails**
+
+- Do not treat sub-agent output as final architecture without checking **Operating principles** and `ROADMAP.md`.
+- Prefer smallest-change recommendations.
+- Record assumptions and unresolved risks explicitly in the plan.
+
+### Incremental delivery
+
+- Prefer thin vertical slices over big-bang changes.
+- Land work in small verifiable increments: implement → test → verify → expand.
+- When the stack supports it, keep risky behavior behind feature flags or configuration switches.
+- Do not trade away production quality for thinness. If two options are similarly scoped, prefer the one closer to the target architecture and stronger operational behavior (retries, timeouts, clear failure modes for IPFS and Web3).
+- If a slice deliberately uses a temporary shortcut, document why, define an explicit follow-up in the same plan, and do not call the work “done” until the quality gap is closed.
+
+### Definition of done
+
+A task is complete when:
+
+- Behavior matches acceptance criteria.
+- Tests, lint, and build pass for affected packages—or there is a documented reason they were not run (for example CI not yet enabled) and manual verification is recorded.
+- Code follows **Naming conventions** and is readable.
+- **Documentation** is updated when warranted (see **Documentation updates** below).
+- A verification story exists: what changed and how we know it works.
+- **Dependency and migration hygiene** for the slice: Python dependency changes include updated `requirements.txt` or the project’s chosen lockfile strategy and are committed with the change; Node changes in `frontend/` or `contracts/` include updated lockfiles (`package-lock.json`, `pnpm-lock.yaml`, or npm/yarn equivalent—follow whichever the package uses) committed with the change; database model changes include Alembic migrations in the same slice where applicable.
+
+### When blocked
+
+- Ask exactly one targeted question.
+- Provide a recommended default.
+- State what would change based on a different answer.
+
+### Documentation updates
+
+Update README, `ROADMAP.md` (if epics or milestones materially shift), `.env.example`, or operator-facing notes when setup, environment variables, integration boundaries, or publicly observable API behavior changes. Epic 10 academic artifacts follow course rules and are out of scope unless the task explicitly includes them.
+
 ## Naming conventions (directive)
 
 **Contributors and automated agents must follow these conventions** for new files, symbols, and identifiers. When touching existing code, **match the surrounding style**; when adding new modules, **default to the rules below**.
 
 ### Repository and documentation files
 
-- Use **`AGENTS.md`** (this file), **`README.md`**, and **`ROADMAP.md`** at the repo root—uppercase primary entry docs are the project standard.
+- Use `**AGENTS.md`** (this file), `**README.md`**, and `**ROADMAP.md`** at the repo root—uppercase primary entry docs are the project standard.
 - Other markdown in `docs/` or similar: `**UPPER_SNAKE_CASE.md**` or `**kebab-case.md**`—pick one pattern per folder and stay consistent.
 
 ### Frontend (`frontend/`) — TypeScript, React, Next.js
@@ -150,13 +250,14 @@ Agents should add or update tests when changing behavior in those areas.
 
 Documentation chapters and UML artifacts are project-book outputs. Code changes may reference diagrams in-repo if the team adds them; agents should not replace formal academic submission processes—coordinate with course requirements.
 
-## How agents should work
+## Agent quick reference
 
-1. Read `ROADMAP.md` to pick the smallest epic/task that matches the request.
-2. Apply **Naming conventions** above for all new identifiers and files; match existing patterns when editing legacy code.
-3. Prefer incremental PR-sized changes: schema + migration together; API + minimal UI when the story demands both.
-4. For Web3/IPFS, fail loudly in logs, surface safe messages to users, and document env vars.
-5. Follow **Git commits and attribution** for every commit and push.
+1. Align work with **`ROADMAP.md`** and this file (**Operating principles**, **Agent workflow**).
+2. Apply **Naming conventions** for new code; match surrounding patterns when editing existing files.
+3. Prefer incremental, verifiable slices (**Incremental delivery**): schema with migrations, API changes with tests when present, env vars documented.
+4. For complex work, use **Human-in-the-loop checkpoints**: pause for maintainer approval between major sub-tasks unless they waive it for the session.
+5. For Web3/IPFS, fail clearly in logs, return safe errors to clients, and document configuration.
+6. Follow **Git commits and attribution** for every commit and push.
 
 ## Out of scope unless explicitly requested
 
@@ -166,4 +267,4 @@ Documentation chapters and UML artifacts are project-book outputs. Code changes 
 
 ---
 
-For milestones and full story list, see **`ROADMAP.md`**.
+For milestones and full story list, see `**ROADMAP.md`**.
