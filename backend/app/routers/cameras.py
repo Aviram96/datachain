@@ -17,13 +17,26 @@ from app.schemas.camera import (
     CameraCreate,
     CameraListResponse,
     CameraPublic,
+    CameraStatus,
     CameraUpdate,
 )
+from app.services.camera_probe import probe_many_statuses, probe_status
 
 router = APIRouter()
 
 DEFAULT_PAGE_SIZE = 10
 MAX_PAGE_SIZE = 50
+
+
+def _camera_public(camera: Camera, status: CameraStatus) -> CameraPublic:
+    return CameraPublic(
+        id=camera.id,
+        name=camera.name,
+        stream_url=camera.stream_url,
+        location=camera.location,
+        created_at=camera.created_at,
+        status=status,
+    )
 
 
 def _get_owned_camera(
@@ -54,7 +67,7 @@ def create_camera(
     payload: CameraCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
-) -> Camera:
+) -> CameraPublic:
     camera = Camera(
         user_id=current_user.id,
         name=payload.name,
@@ -64,7 +77,7 @@ def create_camera(
     db.add(camera)
     db.commit()
     db.refresh(camera)
-    return camera
+    return _camera_public(camera, probe_status(camera.stream_url))
 
 
 @router.get("", response_model=CameraListResponse)
@@ -94,8 +107,13 @@ def list_cameras(
     )
 
     pages = max(1, math.ceil(total / page_size)) if total else 1
+    statuses = probe_many_statuses([camera.stream_url for camera in cameras])
+    items = [
+        _camera_public(camera, status)
+        for camera, status in zip(cameras, statuses, strict=True)
+    ]
     return CameraListResponse(
-        items=cameras,
+        items=items,
         total=total,
         page=page,
         page_size=page_size,
@@ -108,8 +126,9 @@ def get_camera(
     camera_id: UUID,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
-) -> Camera:
-    return _get_owned_camera(camera_id, current_user, db)
+) -> CameraPublic:
+    camera = _get_owned_camera(camera_id, current_user, db)
+    return _camera_public(camera, probe_status(camera.stream_url))
 
 
 @router.patch("/{camera_id}", response_model=CameraPublic)
@@ -118,7 +137,7 @@ def update_camera(
     payload: CameraUpdate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
-) -> Camera:
+) -> CameraPublic:
     camera = _get_owned_camera(camera_id, current_user, db)
     updates = payload.model_dump(exclude_unset=True)
     if not updates:
@@ -130,7 +149,7 @@ def update_camera(
         setattr(camera, field, value)
     db.commit()
     db.refresh(camera)
-    return camera
+    return _camera_public(camera, probe_status(camera.stream_url))
 
 
 @router.delete(

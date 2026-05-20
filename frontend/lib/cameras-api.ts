@@ -7,12 +7,15 @@ export type CameraCreatePayload = {
   location?: string | null;
 };
 
+export type CameraStatus = "online" | "offline";
+
 export type CameraPublic = {
   id: string;
   name: string;
   stream_url: string;
   location: string | null;
   created_at: string;
+  status: CameraStatus;
 };
 
 export type CameraListResponse = {

@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+CameraStatus = Literal["online", "offline"]
 
 
 class CameraBase(BaseModel):
@@ -66,6 +69,7 @@ class CameraPublic(BaseModel):
     stream_url: str
     location: str | None
     created_at: datetime
+    status: CameraStatus
 
 
 class CameraListResponse(BaseModel):

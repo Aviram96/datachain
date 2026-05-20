@@ -109,6 +109,17 @@ alembic revision --autogenerate -m "describe change"
 alembic downgrade -1
 ```
 
+## Camera online/offline (US-4.6)
+
+List and detail responses include a **`status`** field: `"online"` or `"offline"`. The API probes each camera’s **`stream_url`** on demand (not stored in the database):
+
+- **Rule:** open a short **TCP connection** to the URL’s host and port. Success → **online**; timeout or connection error → **offline**.
+- **Default ports** when omitted: `http` → 80, `https` → 443, `rtsp` → 554.
+- **Not validated:** HTTP status codes, RTSP handshake, or whether a video stream is playable—only host reachability.
+- **Timeout:** `CAMERA_PROBE_TIMEOUT_SECONDS` (default `2`, clamped 0.5–10). List endpoints probe cameras on the current page in parallel (up to 10 workers).
+
+After changing `.env`, restart uvicorn; reload may not pick up new values.
+
 ## Tests
 
 From `backend/` with dev dependencies installed:

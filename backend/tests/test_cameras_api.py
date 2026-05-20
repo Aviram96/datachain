@@ -36,6 +36,18 @@ def db_session() -> Session:
         Base.metadata.drop_all(bind=engine)
 
 
+@pytest.fixture(autouse=True)
+def stub_camera_probe(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        "app.routers.cameras.probe_status",
+        lambda _url: "offline",
+    )
+    monkeypatch.setattr(
+        "app.routers.cameras.probe_many_statuses",
+        lambda urls: ["offline"] * len(urls),
+    )
+
+
 @pytest.fixture
 def client(db_session: Session) -> TestClient:
     def override_get_db():
@@ -86,6 +98,7 @@ def test_camera_crud_owner_scoped(client: TestClient) -> None:
     camera_id = body["id"]
     assert body["name"] == "Front door"
     assert body["location"] == "Lobby"
+    assert body["status"] == "offline"
 
     other_list = client.get("/cameras", headers=_auth_headers(token_b))
     assert other_list.status_code == 200
@@ -93,7 +106,9 @@ def test_camera_crud_owner_scoped(client: TestClient) -> None:
 
     listed = client.get("/cameras", headers=_auth_headers(token_a))
     assert listed.status_code == 200
-    assert listed.json()["total"] == 1
+    listed_body = listed.json()
+    assert listed_body["total"] == 1
+    assert listed_body["items"][0]["status"] == "offline"
 
     get_one = client.get(
         f"/cameras/{camera_id}",

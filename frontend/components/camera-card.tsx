@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 
-import type { CameraPublic } from "@/lib/cameras-api";
+import type { CameraPublic, CameraStatus } from "@/lib/cameras-api";
 
 type CameraCardProps = {
   camera: CameraPublic;
@@ -27,7 +27,10 @@ export function CameraCard({ camera, onDelete }: CameraCardProps) {
   return (
     <article className="flex flex-col rounded-lg border border-slate-800 bg-slate-900/60 p-4">
       <div className="flex items-start justify-between gap-2">
-        <h2 className="text-lg font-medium text-white">{camera.name}</h2>
+        <div className="min-w-0 space-y-1">
+          <h2 className="text-lg font-medium text-white">{camera.name}</h2>
+          <StatusBadge status={camera.status} />
+        </div>
         <div className="flex shrink-0 gap-3 text-sm">
           <Link
             href={`/cameras/${camera.id}/edit`}
@@ -89,5 +92,26 @@ export function CameraCard({ camera, onDelete }: CameraCardProps) {
         ) : null}
       </dl>
     </article>
+  );
+}
+
+function StatusBadge({ status }: { status: CameraStatus }) {
+  const online = status === "online";
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium ${
+        online
+          ? "bg-emerald-950/80 text-emerald-300 ring-1 ring-emerald-800/60"
+          : "bg-slate-800 text-slate-400 ring-1 ring-slate-700"
+      }`}
+    >
+      <span
+        className={`h-1.5 w-1.5 rounded-full ${
+          online ? "bg-emerald-400" : "bg-slate-500"
+        }`}
+        aria-hidden
+      />
+      {online ? "Online" : "Offline"}
+    </span>
   );
 }
