@@ -79,16 +79,16 @@ Keep the **Status** column in this table aligned with the repository as work lan
 | ------ | ---------------------------------------------------------------------- | ------ |
 | US-4.1 | As a user, I want a form to add a camera (Name, IP/URL, Location).     | Done — `/cameras/new`, `CameraForm` in `frontend/components/camera-form.tsx`, `createCamera` in `frontend/lib/cameras-api.ts`; JWT via `authFetch`; `RequireAuth` redirects guests to `/login` |
 | US-4.2 | As an API, I need to validate and persist camera data to PostgreSQL.   | Done — `Camera` in `backend/app/models/camera.py`; owner-scoped `POST/GET/PATCH/DELETE /cameras` in `backend/app/routers/cameras.py`; validation in `backend/app/schemas/camera.py`; tests in `backend/tests/test_cameras_api.py` |
-| US-4.3 | As a user, I want a dashboard grid of all my cameras.                  | Done — `/cameras`, `CamerasDashboard` + `CameraCard` in `frontend/components/`; `listCameras` in `frontend/lib/cameras-api.ts`; first page (10 items); note when more than 10 until US-4.7 |
+| US-4.3 | As a user, I want a dashboard grid of all my cameras.                  | Done — `/cameras`, `CamerasDashboard` + `CameraCard` in `frontend/components/`; `listCameras` in `frontend/lib/cameras-api.ts` |
 | US-4.4 | As a user, I want to edit an existing camera.                          | Done — `/cameras/[id]/edit`, `getCamera` / `updateCamera` in `frontend/lib/cameras-api.ts`; `CameraForm` prefill via `initialValues`; Edit link on `CameraCard` |
 | US-4.5 | As a user, I want to delete a camera and remove it from the dashboard. | Done — `deleteCamera` in `frontend/lib/cameras-api.ts`; inline confirm on `CameraCard`; dashboard removes card and updates count on success |
 | US-4.6 | As a user, I want an Online/Offline status indicator per camera.       | Done — TCP reachability probe in `backend/app/services/camera_probe.py`; `status` on `CameraPublic`; badge on `CameraCard`; documented in `backend/README.md` |
-| US-4.7 | As a user, I want pagination when I have more than 10 cameras.         | |
+| US-4.7 | As a user, I want pagination when I have more than 10 cameras.         | Done — `CamerasDashboard` Previous/Next controls and page summary; uses API `page` / `pages`; reloads or steps back after delete on last item of a page |
 
 
 **Exit criteria**: Full CRUD via API + UI; pagination and status indicators implemented per agreed rules (e.g., ping vs last-seen).
 
-**Progress note**: **US-4.1–US-4.6** complete on branch `epic4`. Dashboard shows online/offline badges from API probes; pagination controls (US-4.7) not implemented yet.
+**Progress note**: **US-4.1–US-4.7** complete on branch `epic4`. Epic 4 exit criteria met for CRUD API + UI, pagination, and online/offline indicators.
 
 ---
 
