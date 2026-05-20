@@ -91,6 +91,20 @@ export async function updateCamera(
   return (await response.json()) as CameraPublic;
 }
 
+export async function deleteCamera(id: string): Promise<void> {
+  const response = await authFetch(`${getApiBaseUrl()}/cameras/${id}`, {
+    method: "DELETE",
+  });
+
+  if (!response.ok) {
+    const message = await parseApiErrorMessage(
+      response,
+      "Could not delete camera."
+    );
+    throw new CamerasApiError(message, response.status);
+  }
+}
+
 export async function createCamera(
   payload: CameraCreatePayload
 ): Promise<CameraPublic> {

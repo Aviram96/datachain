@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import { networkErrorMessage } from "@/lib/api";
 import {
   CamerasApiError,
+  deleteCamera,
   listCameras,
   type CameraPublic,
 } from "@/lib/cameras-api";
@@ -44,6 +45,25 @@ export function CamerasDashboard() {
 
   const hasMore = total > cameras.length;
 
+  const handleDelete = useCallback(
+    async (id: string) => {
+      try {
+        await deleteCamera(id);
+        setCameras((prev) => prev.filter((camera) => camera.id !== id));
+        setTotal((prev) => Math.max(0, prev - 1));
+        showToast("Camera removed.", "success");
+      } catch (error) {
+        if (error instanceof CamerasApiError) {
+          showToast(error.message, "error");
+        } else {
+          showToast(networkErrorMessage(), "error");
+        }
+        throw error;
+      }
+    },
+    [showToast]
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -72,7 +92,7 @@ export function CamerasDashboard() {
           Add your first camera to start monitoring streams.
         </p>
       ) : (
-        <CamerasGrid cameras={cameras} />
+        <CamerasGrid cameras={cameras} onDelete={handleDelete} />
       )}
 
       {hasMore ? (
@@ -84,11 +104,21 @@ export function CamerasDashboard() {
   );
 }
 
-function CamerasGrid({ cameras }: { cameras: CameraPublic[] }) {
+function CamerasGrid({
+  cameras,
+  onDelete,
+}: {
+  cameras: CameraPublic[];
+  onDelete: (id: string) => Promise<void>;
+}) {
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       {cameras.map((camera) => (
-        <CameraCard key={camera.id} camera={camera} />
+        <CameraCard
+          key={camera.id}
+          camera={camera}
+          onDelete={() => onDelete(camera.id)}
+        />
       ))}
     </div>
   );
