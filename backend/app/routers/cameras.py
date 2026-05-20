@@ -5,7 +5,7 @@ from __future__ import annotations
 import math
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -133,12 +133,17 @@ def update_camera(
     return camera
 
 
-@router.delete("/{camera_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{camera_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    response_class=Response,
+)
 def delete_camera(
     camera_id: UUID,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
-) -> None:
+) -> Response:
     camera = _get_owned_camera(camera_id, current_user, db)
     db.delete(camera)
     db.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
