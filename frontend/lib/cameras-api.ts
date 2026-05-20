@@ -56,6 +56,41 @@ export async function listCameras(
   return (await response.json()) as CameraListResponse;
 }
 
+export async function getCamera(id: string): Promise<CameraPublic> {
+  const response = await authFetch(`${getApiBaseUrl()}/cameras/${id}`);
+
+  if (!response.ok) {
+    const message = await parseApiErrorMessage(
+      response,
+      "Could not load camera."
+    );
+    throw new CamerasApiError(message, response.status);
+  }
+
+  return (await response.json()) as CameraPublic;
+}
+
+export async function updateCamera(
+  id: string,
+  payload: CameraCreatePayload
+): Promise<CameraPublic> {
+  const response = await authFetch(`${getApiBaseUrl()}/cameras/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const message = await parseApiErrorMessage(
+      response,
+      "Could not update camera."
+    );
+    throw new CamerasApiError(message, response.status);
+  }
+
+  return (await response.json()) as CameraPublic;
+}
+
 export async function createCamera(
   payload: CameraCreatePayload
 ): Promise<CameraPublic> {

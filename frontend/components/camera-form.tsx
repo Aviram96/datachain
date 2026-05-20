@@ -4,20 +4,28 @@ import { FormEvent, useState } from "react";
 
 import type { CameraCreatePayload } from "@/lib/cameras-api";
 
+export type CameraFormInitialValues = {
+  name: string;
+  stream_url: string;
+  location: string | null;
+};
+
 type CameraFormProps = {
   submitLabel: string;
   onSubmit: (payload: CameraCreatePayload) => Promise<void>;
   onCancel?: () => void;
+  initialValues?: CameraFormInitialValues;
 };
 
 export function CameraForm({
   submitLabel,
   onSubmit,
   onCancel,
+  initialValues,
 }: CameraFormProps) {
-  const [name, setName] = useState("");
-  const [streamUrl, setStreamUrl] = useState("");
-  const [location, setLocation] = useState("");
+  const [name, setName] = useState(initialValues?.name ?? "");
+  const [streamUrl, setStreamUrl] = useState(initialValues?.stream_url ?? "");
+  const [location, setLocation] = useState(initialValues?.location ?? "");
   const [submitting, setSubmitting] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
