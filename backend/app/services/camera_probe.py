@@ -39,9 +39,7 @@ def probe_stream_reachable(
     if target is None:
         return False
     host, port = target
-    seconds = (
-        timeout if timeout is not None else get_camera_probe_timeout_seconds()
-    )
+    seconds = timeout if timeout is not None else get_camera_probe_timeout_seconds()
     try:
         with socket.create_connection((host, port), timeout=seconds):
             return True

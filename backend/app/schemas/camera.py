@@ -27,9 +27,7 @@ class CameraBase(BaseModel):
             or lowered.startswith("https://")
             or lowered.startswith("rtsp://")
         ):
-            raise ValueError(
-                "Stream URL must start with http://, https://, or rtsp://"
-            )
+            raise ValueError("Stream URL must start with http://, https://, or rtsp://")
         return value
 
 
@@ -55,9 +53,7 @@ class CameraUpdate(BaseModel):
             or lowered.startswith("https://")
             or lowered.startswith("rtsp://")
         ):
-            raise ValueError(
-                "Stream URL must start with http://, https://, or rtsp://"
-            )
+            raise ValueError("Stream URL must start with http://, https://, or rtsp://")
         return value
 
 

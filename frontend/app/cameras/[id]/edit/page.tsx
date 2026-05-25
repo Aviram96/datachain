@@ -59,7 +59,9 @@ export default function EditCameraPage() {
           >
             ← Cameras
           </Link>
-          <h1 className="mt-2 text-2xl font-semibold text-white">Edit camera</h1>
+          <h1 className="mt-2 text-2xl font-semibold text-white">
+            Edit camera
+          </h1>
           <p className="mt-1 text-sm text-slate-400">
             Update name, stream URL, or location.
           </p>
