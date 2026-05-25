@@ -44,7 +44,16 @@ def test_probe_stream_reachable_failure() -> None:
 def test_probe_status_and_many() -> None:
     with patch(
         "app.services.camera_probe.probe_stream_reachable",
-        side_effect=[True, False],
+        return_value=True,
     ):
         assert probe_status("http://a") == "online"
+
+    statuses = {
+        "http://a": "online",
+        "http://b": "offline",
+    }
+    with patch(
+        "app.services.camera_probe.probe_status",
+        side_effect=lambda url: statuses[url],
+    ):
         assert probe_many_statuses(["http://a", "http://b"]) == ["online", "offline"]

@@ -14,7 +14,7 @@ from app.database import Base
 from app.deps import get_db
 from app.main import app
 
-import app.models  # noqa: F401
+import app.models as _models  # noqa: F401
 
 TEST_PASSWORD = "test-password-12"
 
