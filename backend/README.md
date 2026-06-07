@@ -120,6 +120,27 @@ List and detail responses include a **`status`** field: `"online"` or `"offline"
 
 After changing `.env`, restart uvicorn; reload may not pick up new values.
 
+## Simulated CCTV feed (Epic 5, slice 1)
+
+Before chunking lands, you can **loop a local `.mp4` at real-time speed** as if it were a live camera feed. This uses **FFmpeg** on your machine (install separately; not a Python package).
+
+**Prerequisites:** FFmpeg on `PATH` ([download](https://ffmpeg.org/download.html)).
+
+From `backend/` with the venv activated:
+
+```powershell
+# Option A: explicit file
+python scripts/simulate_cctv_feed.py --source C:\path\to\sample.mp4
+
+# Option B: environment variable (see backend/.env.example)
+$env:CCTV_SOURCE_MP4 = "C:\path\to\sample.mp4"
+python scripts/simulate_cctv_feed.py
+```
+
+The process writes a continuous **MPEG-TS** stream to **stdout** (suitable for piping into the chunking step in the next slice). Press **Ctrl+C** to stop; the script terminates FFmpeg cleanly.
+
+**Note:** Use a short sample clip for testing; the file loops forever until you stop the script.
+
 ## Tests
 
 From `backend/` with dev dependencies installed:

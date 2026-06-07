@@ -47,6 +47,9 @@ contracts/typechain-types/
 contracts/coverage/
 contracts/coverage.json
 
+# Epic 5 video pipeline temp chunks (created by future chunking worker)
+backend/temp/
+
 # Logs
 *.log
 npm-debug.log*

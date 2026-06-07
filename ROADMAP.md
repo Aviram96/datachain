@@ -97,13 +97,13 @@ Keep the **Status** column in this table aligned with the repository as work lan
 **Goal**: Reliable local/simulated ingest, chunking, temp storage, and cleanup.
 
 
-| Type  | Item                                                                           |
-| ----- | ------------------------------------------------------------------------------ |
-| Task  | Python script to read a local `.mp4` and simulate a continuous CCTV-style feed |
-| Story | Backend uses FFmpeg to chunk the stream into **1-minute** `.mp4` segments      |
-| Story | Backend writes chunks to a local `temp/` directory                             |
-| Task  | Background worker cleans `temp/` after successful processing                   |
-| Story | System restarts FFmpeg gracefully if the simulated feed crashes                |
+| Type  | Item                                                                           | Status |
+| ----- | ------------------------------------------------------------------------------ | ------ |
+| Task  | Python script to read a local `.mp4` and simulate a continuous CCTV-style feed | Done — `backend/scripts/simulate_cctv_feed.py`, `backend/app/services/cctv_feed_simulator.py`; FFmpeg loops source to stdout (`-re -stream_loop -1`); see `backend/README.md` |
+| Story | Backend uses FFmpeg to chunk the stream into **1-minute** `.mp4` segments      | |
+| Story | Backend writes chunks to a local `temp/` directory                             | |
+| Task  | Background worker cleans `temp/` after successful processing                   | |
+| Story | System restarts FFmpeg gracefully if the simulated feed crashes                | |
 
 
 **Exit criteria**: Deterministic chunk duration; disk does not grow unbounded; recovery from process failure documented or automated.

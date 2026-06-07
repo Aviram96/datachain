@@ -210,6 +210,30 @@ Readable explanations of what we use and why—suitable for non-specialists and 
 
 **Where it shows up:** Run from `contracts/`; see `contracts/README.md`.
 
+### FFmpeg
+
+**What it is:** **FFmpeg** is a widely used **command-line toolkit** for working with video and audio. It can read files, change format, split streams into timed segments, and stream output to files or pipes.
+
+**Why Datachain uses it:** CCTV ingest needs **fixed-duration chunks** (about one minute) for IPFS uploads and chain anchors. FFmpeg is the standard way to turn a continuous feed (real RTSP or a **looped sample MP4**) into those segments without storing one giant file in the API process.
+
+**Where it shows up:** Epic 5 starts with `backend/scripts/simulate_cctv_feed.py` and `backend/app/services/cctv_feed_simulator.py` (loop a local `.mp4` at real-time pace to stdout). Chunking into `backend/temp/` is the next slice. Install FFmpeg on the host; see `backend/README.md`.
+
+### Simulated CCTV feed (development)
+
+**What it is:** For local development, a **simulated feed** replays one **`.mp4` file in a loop** at real-time speed instead of connecting to a physical camera or RTSP URL. That lets you test the pipeline without hardware.
+
+**Why Datachain uses it:** Epic 5 needs a **repeatable** input before production RTSP ingest. Looping a sample clip exercises FFmpeg, chunking, and later upload/anchor steps the same way every run.
+
+**Where it shows up:** `CCTV_SOURCE_MP4` in `backend/.env.example`; CLI `python scripts/simulate_cctv_feed.py` from `backend/`.
+
+### Development mocks for IPFS and blockchain (Epic 6, planned)
+
+**What it is:** A **mock** (fake stand-in) lets the backend **pretend** an external service succeeded—returning a made-up **CID** or **transaction hash**—so the rest of the pipeline (database rows, API, UI) can be built **before** you have Pinata or Polygon keys.
+
+**Why Datachain uses it:** You can finish **Web2 flow** (chunk → record metadata → list videos) without paying for pinning or testnet gas while learning. Later, environment flags (for example `MOCK_IPFS=true`, `MOCK_CHAIN=true`) turn off mocks and call real Pinata and Polygon Amoy.
+
+**Where it will show up:** Epic 6 under `backend/` (storage and Web3 modules); configuration documented in `backend/.env.example` when implemented. **Not in the repo yet**—real integrations replace mocks when you are ready.
+
 ### Technologies on the roadmap but not fully in the repo yet
 
-The product vision also relies on **IPFS/Pinata** (video storage), **Polygon** (testnet anchoring and live RPC), **ethers.js** (browser verification), **SQLAlchemy/Alembic** (database layer in code), and **FFmpeg** (video chunking). These will receive plain-language entries in **this document** when they are implemented in the repository, per **Plain-language technology notes** in `**AGENTS.md`**.
+The product vision still needs full **IPFS/Pinata** and **Polygon Amoy** integrations (with mocks first in Epic 6), plus **ethers.js** browser verification (Epic 8). Plain-language entries here are updated as each lands; see **Development mocks** above for the interim approach.
