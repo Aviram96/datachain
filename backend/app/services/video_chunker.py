@@ -4,15 +4,19 @@ from __future__ import annotations
 
 import logging
 import os
-import signal
-import subprocess
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from app.services.cctv_feed_simulator import (
     DEFAULT_FFMPEG,
     validate_source_mp4,
+)
+from app.services.ffmpeg_supervisor import (
+    FFmpegRunConfig,
+    FFmpegSupervisor,
+    resolve_max_restarts,
+    resolve_restart_delay_seconds,
 )
 
 if TYPE_CHECKING:
@@ -130,87 +134,43 @@ class VideoChunker:
 
     def __init__(self, config: VideoChunkerConfig) -> None:
         self._config = config
-        self._process: subprocess.Popen[bytes] | None = None
-        self._stopped = False
-
-    @property
-    def is_running(self) -> bool:
-        return self._process is not None and self._process.poll() is None
-
-    def start(self) -> None:
-        if self.is_running:
-            raise VideoChunkerError("Chunker is already running")
-        validate_source_mp4(self._config.source_path)
-        ensure_temp_dir(self._config.temp_dir)
-        cmd = build_ffmpeg_chunk_command(self._config)
-        mode = "looping" if self._config.loop_source else "one pass"
-        logger.info(
-            "Chunking %s into %ss segments under %s (%s; Ctrl+C to stop)",
-            self._config.source_path,
-            self._config.segment_duration_seconds,
-            self._config.temp_dir,
-            mode,
-        )
-        self._process = subprocess.Popen(cmd, stderr=subprocess.PIPE)
-
-    def stop(self) -> None:
-        if self._stopped:
-            return
-        self._stopped = True
-        proc = self._process
-        if proc is None or proc.poll() is not None:
-            return
-        logger.info("Stopping video chunker")
-        proc.terminate()
-        try:
-            proc.wait(timeout=5)
-        except subprocess.TimeoutExpired:
-            proc.kill()
-            proc.wait(timeout=5)
-
-    def wait(self) -> int:
-        if self._process is None:
-            return 0
-        return self._process.wait()
 
     def run_until_signal(
         self,
         worker: ChunkProcessingWorker | None = None,
     ) -> int:
-        """Start, handle SIGINT/SIGTERM, stop cleanly, return FFmpeg exit code."""
-        previous_handlers: dict[int, Any] = {}
-
-        def _handle_signal(signum: int, _frame: object | None) -> None:
-            logger.info("Received signal %s; shutting down chunker", signum)
-            self.stop()
-
-        for sig in (signal.SIGINT, signal.SIGTERM):
-            try:
-                previous_handlers[sig] = signal.signal(sig, _handle_signal)
-            except (ValueError, OSError):
-                pass
-
+        """Start chunker; restart FFmpeg on crash when --loop is enabled."""
+        validate_source_mp4(self._config.source_path)
+        ensure_temp_dir(self._config.temp_dir)
+        mode = "looping" if self._config.loop_source else "one pass"
+        restart_note = "auto-restart on crash" if self._config.loop_source else "no restart"
+        logger.info(
+            "Chunking %s into %ss segments under %s (%s; %s; Ctrl+C to stop)",
+            self._config.source_path,
+            self._config.segment_duration_seconds,
+            self._config.temp_dir,
+            mode,
+            restart_note,
+        )
+        run_config = FFmpegRunConfig(
+            build_command=lambda: build_ffmpeg_chunk_command(self._config),
+            restart_on_crash=self._config.loop_source,
+            restart_delay_seconds=resolve_restart_delay_seconds(),
+            max_restarts=resolve_max_restarts(),
+        )
+        supervisor = FFmpegSupervisor(run_config)
         try:
             if worker is not None:
                 worker.start()
-            self.start()
-            code = self.wait()
-            if self._process and self._process.stderr:
-                err = self._process.stderr.read().decode("utf-8", errors="replace")
-                if err.strip():
-                    logger.warning("FFmpeg stderr:\n%s", err.strip())
+            code = supervisor.run_until_signal()
             chunks = list_chunk_files(
                 self._config.temp_dir,
                 self._config.segment_pattern,
             )
             logger.info("Wrote %d chunk file(s) to %s", len(chunks), self._config.temp_dir)
+            if supervisor.restart_count:
+                logger.info("FFmpeg restarted %s time(s) after crash", supervisor.restart_count)
             return code
         finally:
-            self.stop()
             if worker is not None:
                 worker.stop(flush=True)
-            for sig, handler in previous_handlers.items():
-                try:
-                    signal.signal(sig, handler)
-                except (ValueError, OSError):
-                    pass

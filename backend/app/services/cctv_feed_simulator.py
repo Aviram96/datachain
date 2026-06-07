@@ -3,13 +3,17 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
 import os
-import signal
-import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
+
+from app.services.ffmpeg_supervisor import (
+    FFmpegRunConfig,
+    FFmpegSupervisor,
+    resolve_max_restarts,
+    resolve_restart_delay_seconds,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -77,76 +81,21 @@ class CctvFeedSimulator:
 
     def __init__(self, config: CctvFeedConfig) -> None:
         self._config = config
-        self._process: subprocess.Popen[bytes] | None = None
-        self._stopped = False
-
-    @property
-    def is_running(self) -> bool:
-        return self._process is not None and self._process.poll() is None
-
-    def start(self) -> None:
-        if self.is_running:
-            raise CctvFeedError("Simulator is already running")
-        validate_source_mp4(self._config.source_path)
-        cmd = build_ffmpeg_loop_command(self._config)
-        logger.info(
-            "Starting CCTV feed simulation from %s (Ctrl+C to stop)",
-            self._config.source_path,
-        )
-        self._process = subprocess.Popen(
-            cmd,
-            stdout=sys.stdout.buffer,
-            stderr=subprocess.PIPE,
-        )
-
-    def stop(self) -> None:
-        if self._stopped:
-            return
-        self._stopped = True
-        proc = self._process
-        if proc is None or proc.poll() is not None:
-            return
-        logger.info("Stopping CCTV feed simulation")
-        proc.terminate()
-        try:
-            proc.wait(timeout=5)
-        except subprocess.TimeoutExpired:
-            proc.kill()
-            proc.wait(timeout=5)
-
-    def wait(self) -> int:
-        """Block until FFmpeg exits; return its exit code (0 if not started)."""
-        if self._process is None:
-            return 0
-        return self._process.wait()
+        self._supervisor: FFmpegSupervisor | None = None
 
     def run_until_signal(self) -> int:
-        """Start, handle SIGINT/SIGTERM, stop cleanly, return FFmpeg exit code."""
-        previous_handlers: dict[int, Any] = {}
-
-        def _handle_signal(signum: int, _frame: object | None) -> None:
-            logger.info("Received signal %s; shutting down feed", signum)
-            self.stop()
-
-        for sig in (signal.SIGINT, signal.SIGTERM):
-            try:
-                previous_handlers[sig] = signal.signal(sig, _handle_signal)
-            except (ValueError, OSError):
-                # SIGTERM not always available (e.g. some Windows builds)
-                pass
-
-        try:
-            self.start()
-            code = self.wait()
-            if self._process and self._process.stderr:
-                err = self._process.stderr.read().decode("utf-8", errors="replace")
-                if err.strip():
-                    logger.warning("FFmpeg stderr:\n%s", err.strip())
-            return code
-        finally:
-            self.stop()
-            for sig, handler in previous_handlers.items():
-                try:
-                    signal.signal(sig, handler)
-                except (ValueError, OSError):
-                    pass
+        """Start feed, restart FFmpeg on crash, stop cleanly on signal."""
+        validate_source_mp4(self._config.source_path)
+        logger.info(
+            "Starting CCTV feed simulation from %s (Ctrl+C to stop; auto-restart on crash)",
+            self._config.source_path,
+        )
+        run_config = FFmpegRunConfig(
+            build_command=lambda: build_ffmpeg_loop_command(self._config),
+            restart_on_crash=True,
+            restart_delay_seconds=resolve_restart_delay_seconds(),
+            max_restarts=resolve_max_restarts(),
+            popen_kwargs={"stdout": sys.stdout.buffer},
+        )
+        self._supervisor = FFmpegSupervisor(run_config)
+        return self._supervisor.run_until_signal()

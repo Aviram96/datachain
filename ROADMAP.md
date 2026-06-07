@@ -103,10 +103,12 @@ Keep the **Status** column in this table aligned with the repository as work lan
 | Story | Backend uses FFmpeg to chunk the stream into **1-minute** `.mp4` segments      | Done — `backend/app/services/video_chunker.py`, `backend/scripts/chunk_cctv_feed.py`; FFmpeg segment muxer (`-segment_time 60`, `-segment_format mp4`); optional `--loop` for continuous ingest |
 | Story | Backend writes chunks to a local `temp/` directory                             | Done — default `backend/temp/` (`CCTV_TEMP_DIR` override); `chunk_%03d.mp4` naming; gitignored |
 | Task  | Background worker cleans `temp/` after successful processing                   | Done — `backend/app/services/chunk_processing_worker.py`, `temp_chunk_cleanup.py`; `--cleanup-after-success` on chunk CLI; `scripts/process_temp_chunks.py`; stub processor until Epic 6 |
-| Story | System restarts FFmpeg gracefully if the simulated feed crashes                | |
+| Story | System restarts FFmpeg gracefully if the simulated feed crashes                | Done — `backend/app/services/ffmpeg_supervisor.py`; auto-restart on non-zero exit for feed simulator and `--loop` chunker; `CCTV_FFMPEG_RESTART_DELAY_SECONDS`, optional `CCTV_FFMPEG_MAX_RESTARTS` |
 
 
 **Exit criteria**: Deterministic chunk duration; disk does not grow unbounded; recovery from process failure documented or automated.
+
+**Progress note**: Epic 5 **exit criteria met** on branch `epic5` — simulated feed, 1-minute chunking, `temp/` output, cleanup worker, and FFmpeg crash restart for continuous modes.
 
 ---
 

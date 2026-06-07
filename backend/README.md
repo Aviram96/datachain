@@ -179,6 +179,16 @@ python scripts/process_temp_chunks.py
 
 The worker only deletes files matching `chunk_*.mp4` **inside** the configured temp directory (never arbitrary paths).
 
+## FFmpeg crash recovery (Epic 5, slice 4)
+
+Continuous ingest (**feed simulator** and **`chunk_cctv_feed.py --loop`**) **restarts FFmpeg automatically** after a non-zero exit. One-pass chunking does not restart (normal end of file is exit 0).
+
+- **Delay before restart:** `CCTV_FFMPEG_RESTART_DELAY_SECONDS` (default **2**)
+- **Cap retries:** optional `CCTV_FFMPEG_MAX_RESTARTS` (unset = unlimited until you press Ctrl+C)
+- **Stop:** Ctrl+C still terminates the current FFmpeg process and exits cleanly
+
+Implementation: `backend/app/services/ffmpeg_supervisor.py` (shared by feed simulator and loop chunker).
+
 ## Tests
 
 From `backend/` with dev dependencies installed:
