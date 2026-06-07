@@ -161,6 +161,24 @@ Optional flags: `--temp-dir DIR`, `--duration SECONDS` (default **60**), or env 
 
 **Tip:** For a 2–3 minute sample without `--loop`, you should see 2–3 chunk files and the process exits on its own.
 
+## Temp cleanup worker (Epic 5, slice 3)
+
+After a chunk is **successfully processed**, a background worker **deletes it from `temp/`** so disk use stays bounded. Epic 6 will replace the stub processor with IPFS upload + chain anchor + DB write; until then the worker logs and deletes (stub success).
+
+**With chunking** — process and delete each segment as it lands:
+
+```powershell
+python scripts/chunk_cctv_feed.py --source C:\path\to\sample.mp4 --cleanup-after-success
+```
+
+**After chunking** — drain existing files in `temp/` once:
+
+```powershell
+python scripts/process_temp_chunks.py
+```
+
+The worker only deletes files matching `chunk_*.mp4` **inside** the configured temp directory (never arbitrary paths).
+
 ## Tests
 
 From `backend/` with dev dependencies installed:

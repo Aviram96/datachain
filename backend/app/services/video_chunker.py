@@ -8,12 +8,15 @@ import signal
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from app.services.cctv_feed_simulator import (
     DEFAULT_FFMPEG,
     validate_source_mp4,
 )
+
+if TYPE_CHECKING:
+    from app.services.chunk_processing_worker import ChunkProcessingWorker
 
 logger = logging.getLogger(__name__)
 
@@ -170,7 +173,10 @@ class VideoChunker:
             return 0
         return self._process.wait()
 
-    def run_until_signal(self) -> int:
+    def run_until_signal(
+        self,
+        worker: ChunkProcessingWorker | None = None,
+    ) -> int:
         """Start, handle SIGINT/SIGTERM, stop cleanly, return FFmpeg exit code."""
         previous_handlers: dict[int, Any] = {}
 
@@ -185,6 +191,8 @@ class VideoChunker:
                 pass
 
         try:
+            if worker is not None:
+                worker.start()
             self.start()
             code = self.wait()
             if self._process and self._process.stderr:
@@ -199,6 +207,8 @@ class VideoChunker:
             return code
         finally:
             self.stop()
+            if worker is not None:
+                worker.stop(flush=True)
             for sig, handler in previous_handlers.items():
                 try:
                     signal.signal(sig, handler)

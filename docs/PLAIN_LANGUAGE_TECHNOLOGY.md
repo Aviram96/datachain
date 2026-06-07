@@ -226,6 +226,14 @@ Readable explanations of what we use and why—suitable for non-specialists and 
 
 **Where it shows up:** `CCTV_SOURCE_MP4` in `backend/.env.example`; CLI `python scripts/simulate_cctv_feed.py` from `backend/`.
 
+### Temp chunk cleanup worker
+
+**What it is:** A **background worker** watches the **`temp/`** folder for new video chunk files. When processing succeeds (upload and database write in production), it **deletes that file** so old segments do not fill the disk.
+
+**Why Datachain uses it:** Chunks are **temporary staging** until IPFS and the chain record exist. Automatic cleanup keeps laptops and servers healthy during long-running CCTV ingest.
+
+**Where it shows up:** `backend/app/services/chunk_processing_worker.py`, `backend/app/services/temp_chunk_cleanup.py`, `--cleanup-after-success` on `chunk_cctv_feed.py`, and `scripts/process_temp_chunks.py`. Epic 6 swaps the **stub processor** for real Pinata/Web3 steps.
+
 ### Development mocks for IPFS and blockchain (Epic 6, planned)
 
 **What it is:** A **mock** (fake stand-in) lets the backend **pretend** an external service succeeded—returning a made-up **CID** or **transaction hash**—so the rest of the pipeline (database rows, API, UI) can be built **before** you have Pinata or Polygon keys.

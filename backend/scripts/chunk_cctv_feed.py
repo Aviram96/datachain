@@ -19,6 +19,10 @@ import logging
 import sys
 
 from app.services.cctv_feed_simulator import CctvFeedError
+from app.services.chunk_processing_worker import (
+    ChunkProcessingWorker,
+    ChunkProcessingWorkerConfig,
+)
 from app.services.video_chunker import (
     VideoChunker,
     VideoChunkerConfig,
@@ -63,6 +67,11 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Loop source at real-time pace like a live CCTV feed",
     )
     parser.add_argument(
+        "--cleanup-after-success",
+        action="store_true",
+        help="Run background worker to process and delete each chunk from temp/",
+    )
+    parser.add_argument(
         "--ffmpeg",
         metavar="EXE",
         default="ffmpeg",
@@ -82,8 +91,13 @@ def main(argv: list[str] | None = None) -> int:
             ffmpeg_executable=args.ffmpeg.strip() or "ffmpeg",
             loop_source=args.loop,
         )
+        worker = None
+        if args.cleanup_after_success:
+            worker = ChunkProcessingWorker(
+                ChunkProcessingWorkerConfig(temp_dir=config.temp_dir),
+            )
         chunker = VideoChunker(config)
-        return chunker.run_until_signal()
+        return chunker.run_until_signal(worker=worker)
     except (CctvFeedError, VideoChunkerError) as exc:
         logging.error("%s", exc)
         return 1
