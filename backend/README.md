@@ -141,6 +141,26 @@ The process writes a continuous **MPEG-TS** stream to **stdout** (suitable for p
 
 **Note:** Use a short sample clip for testing; the file loops forever until you stop the script.
 
+## Video chunking (Epic 5, slice 2)
+
+Split a local `.mp4` into **1-minute** segments written to **`backend/temp/`** (gitignored). Uses FFmpeg’s **segment muxer** with `-segment_time 60`.
+
+From `backend/` with the venv activated:
+
+```powershell
+# One pass: chunk the whole file, then exit (good for short test clips)
+python scripts/chunk_cctv_feed.py --source C:\path\to\sample.mp4
+
+# Continuous CCTV-style loop: keeps chunking until Ctrl+C
+python scripts/chunk_cctv_feed.py --source C:\path\to\sample.mp4 --loop
+```
+
+Output files: `backend/temp/chunk_000.mp4`, `chunk_001.mp4`, … (directory created automatically).
+
+Optional flags: `--temp-dir DIR`, `--duration SECONDS` (default **60**), or env vars `CCTV_TEMP_DIR` / `CCTV_CHUNK_DURATION_SECONDS` (see `backend/.env.example`).
+
+**Tip:** For a 2–3 minute sample without `--loop`, you should see 2–3 chunk files and the process exits on its own.
+
 ## Tests
 
 From `backend/` with dev dependencies installed:
