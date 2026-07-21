@@ -37,10 +37,10 @@ export function SiteHeader() {
         ) : (
           <>
             <Link href="/login" className={navLinkClass}>
-              Sign in
+              Log in
             </Link>
             <Link href="/register" className={navLinkClass}>
-              Register
+              Sign up
             </Link>
           </>
         )}

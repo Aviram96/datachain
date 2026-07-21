@@ -27,8 +27,8 @@ export function LoginForm() {
       const token = await login({ email, password });
       setAccessToken(token.access_token);
       await refreshSession();
-      showToast("Signed in successfully.", "success");
-      router.push("/");
+      showToast("Logged in successfully.", "success");
+      router.push("/cameras");
     } catch (error) {
       if (error instanceof AuthApiError && error.status === 401) {
         showToast(error.message, "error");
@@ -79,7 +79,7 @@ export function LoginForm() {
         disabled={submitting}
         className="w-full rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500 disabled:opacity-60"
       >
-        {submitting ? "Signing in…" : "Sign in"}
+        {submitting ? "Logging in…" : "Log in"}
       </button>
       <p className="text-center text-sm text-slate-400">
         No account?{" "}
@@ -87,7 +87,7 @@ export function LoginForm() {
           href="/register"
           className="text-emerald-400 hover:text-emerald-300"
         >
-          Register
+          Sign up
         </Link>
       </p>
     </form>

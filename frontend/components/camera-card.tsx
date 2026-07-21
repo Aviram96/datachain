@@ -28,13 +28,26 @@ export function CameraCard({ camera, onDelete }: CameraCardProps) {
     <article className="flex flex-col rounded-lg border border-slate-800 bg-slate-900/60 p-4">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 space-y-1">
-          <h2 className="text-lg font-medium text-white">{camera.name}</h2>
+          <h2 className="text-lg font-medium text-white">
+            <Link
+              href={`/cameras/${camera.id}`}
+              className="hover:text-emerald-300"
+            >
+              {camera.name}
+            </Link>
+          </h2>
           <StatusBadge status={camera.status} />
         </div>
-        <div className="flex shrink-0 gap-3 text-sm">
+        <div className="flex shrink-0 flex-wrap justify-end gap-3 text-sm">
+          <Link
+            href={`/cameras/${camera.id}`}
+            className="text-emerald-400 hover:text-emerald-300"
+          >
+            Open
+          </Link>
           <Link
             href={`/cameras/${camera.id}/edit`}
-            className="text-emerald-400 hover:text-emerald-300"
+            className="text-slate-300 hover:text-white"
           >
             Edit
           </Link>
@@ -53,8 +66,9 @@ export function CameraCard({ camera, onDelete }: CameraCardProps) {
       {confirming ? (
         <div className="mt-3 rounded-md border border-red-900/60 bg-red-950/30 p-3 text-sm">
           <p className="text-slate-200">
-            Delete <span className="font-medium text-white">{camera.name}</span>
-            ? This cannot be undone.
+            Remove{" "}
+            <span className="font-medium text-white">{camera.name}</span> from
+            your dashboard? Historical recordings stay available for evidence.
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             <button
@@ -63,7 +77,7 @@ export function CameraCard({ camera, onDelete }: CameraCardProps) {
               onClick={() => void handleConfirmDelete()}
               className="rounded-md bg-red-700 px-3 py-1.5 text-white hover:bg-red-600 disabled:opacity-60"
             >
-              {deleting ? "Deleting…" : "Delete"}
+              {deleting ? "Removing…" : "Remove"}
             </button>
             <button
               type="button"

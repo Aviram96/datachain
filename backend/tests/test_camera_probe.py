@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from unittest.mock import patch
+import urllib.error
+from unittest.mock import MagicMock, patch
 
 from app.services.camera_probe import (
     probe_many_statuses,
@@ -26,14 +27,50 @@ def test_resolve_stream_host_port_invalid() -> None:
     assert resolve_stream_host_port("not-a-url") is None
 
 
-def test_probe_stream_reachable_success() -> None:
-    with patch("app.services.camera_probe.socket.create_connection") as connect:
-        connect.return_value.__enter__.return_value = None
+def test_probe_http_reachable_on_response() -> None:
+    mock_response = MagicMock()
+    mock_response.read.return_value = b""
+    mock_response.__enter__.return_value = mock_response
+    with patch(
+        "app.services.camera_probe.urllib.request.urlopen",
+        return_value=mock_response,
+    ):
         assert probe_stream_reachable("http://192.0.2.1/live", timeout=1.0) is True
-        connect.assert_called_once_with(("192.0.2.1", 80), timeout=1.0)
 
 
-def test_probe_stream_reachable_failure() -> None:
+def test_probe_http_reachable_on_http_error() -> None:
+    from email.message import EmailMessage
+
+    with patch(
+        "app.services.camera_probe.urllib.request.urlopen",
+        side_effect=urllib.error.HTTPError(
+            "http://192.0.2.1/live",
+            401,
+            "Unauthorized",
+            EmailMessage(),
+            None,
+        ),
+    ):
+        assert probe_stream_reachable("http://192.0.2.1/live", timeout=1.0) is True
+
+
+def test_probe_http_unreachable() -> None:
+    with patch(
+        "app.services.camera_probe.urllib.request.urlopen",
+        side_effect=urllib.error.URLError("down"),
+    ):
+        assert probe_stream_reachable("http://192.0.2.1/live", timeout=1.0) is False
+
+
+def test_probe_rtsp_reachable_via_tcp() -> None:
+    with patch("app.services.camera_probe.socket.create_connection") as connect:
+        sock = MagicMock()
+        sock.recv.return_value = b"RTSP/1.0 200 OK"
+        connect.return_value.__enter__.return_value = sock
+        assert probe_stream_reachable("rtsp://192.0.2.2/stream", timeout=1.0) is True
+
+
+def test_probe_rtsp_unreachable() -> None:
     with patch(
         "app.services.camera_probe.socket.create_connection",
         side_effect=OSError("refused"),

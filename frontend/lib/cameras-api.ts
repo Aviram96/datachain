@@ -9,6 +9,15 @@ export type CameraCreatePayload = {
 
 export type CameraStatus = "online" | "offline";
 
+/** Default list sort: newest cameras first (Slice B / CP-B.C10). */
+export type CameraSort =
+  | "created_at_desc"
+  | "created_at_asc"
+  | "name_asc"
+  | "name_desc";
+
+export const DEFAULT_CAMERA_SORT: CameraSort = "created_at_desc";
+
 export type CameraPublic = {
   id: string;
   name: string;
@@ -26,6 +35,14 @@ export type CameraListResponse = {
   pages: number;
 };
 
+export type ListCamerasParams = {
+  page?: number;
+  pageSize?: number;
+  q?: string;
+  status?: CameraStatus | "";
+  sort?: CameraSort;
+};
+
 export class CamerasApiError extends Error {
   constructor(
     message: string,
@@ -37,15 +54,28 @@ export class CamerasApiError extends Error {
 }
 
 export async function listCameras(
-  page = 1,
+  params: ListCamerasParams | number = 1,
   pageSize = 10
 ): Promise<CameraListResponse> {
-  const params = new URLSearchParams({
-    page: String(page),
-    page_size: String(pageSize),
+  const normalized: ListCamerasParams =
+    typeof params === "number"
+      ? { page: params, pageSize }
+      : { pageSize: 10, ...params };
+
+  const search = new URLSearchParams({
+    page: String(normalized.page ?? 1),
+    page_size: String(normalized.pageSize ?? 10),
+    sort: normalized.sort ?? DEFAULT_CAMERA_SORT,
   });
+  if (normalized.q?.trim()) {
+    search.set("q", normalized.q.trim());
+  }
+  if (normalized.status === "online" || normalized.status === "offline") {
+    search.set("status", normalized.status);
+  }
+
   const response = await authFetch(
-    `${getApiBaseUrl()}/cameras?${params.toString()}`
+    `${getApiBaseUrl()}/cameras?${search.toString()}`
   );
 
   if (!response.ok) {
@@ -84,10 +114,11 @@ export async function updateCamera(
   });
 
   if (!response.ok) {
-    const message = await parseApiErrorMessage(
-      response,
-      "Could not update camera."
-    );
+    const fallback =
+      response.status === 409
+        ? "You already have a camera with this name."
+        : "Could not update camera.";
+    const message = await parseApiErrorMessage(response, fallback);
     throw new CamerasApiError(message, response.status);
   }
 
@@ -118,10 +149,11 @@ export async function createCamera(
   });
 
   if (!response.ok) {
-    const message = await parseApiErrorMessage(
-      response,
-      "Could not add camera."
-    );
+    const fallback =
+      response.status === 409
+        ? "You already have a camera with this name."
+        : "Could not add camera.";
+    const message = await parseApiErrorMessage(response, fallback);
     throw new CamerasApiError(message, response.status);
   }
 

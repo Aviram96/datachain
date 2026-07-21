@@ -54,10 +54,10 @@ export default function EditCameraPage() {
       <div className="space-y-6">
         <div>
           <Link
-            href="/cameras"
+            href={`/cameras/${cameraId}`}
             className="text-sm text-slate-400 hover:text-slate-200"
           >
-            ← Cameras
+            ← Camera
           </Link>
           <h1 className="mt-2 text-2xl font-semibold text-white">
             Edit camera
@@ -78,12 +78,12 @@ export default function EditCameraPage() {
               stream_url: camera.stream_url,
               location: camera.location,
             }}
-            onCancel={() => router.push("/cameras")}
+            onCancel={() => router.push(`/cameras/${camera.id}`)}
             onSubmit={async (payload) => {
               try {
                 await updateCamera(camera.id, payload);
                 showToast("Camera updated.", "success");
-                router.push("/cameras");
+                router.push(`/cameras/${camera.id}`);
               } catch (error) {
                 if (error instanceof CamerasApiError) {
                   showToast(error.message, "error");

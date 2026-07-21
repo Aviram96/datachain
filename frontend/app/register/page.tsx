@@ -5,10 +5,10 @@ export default function RegisterPage() {
     <div className="mx-auto max-w-md space-y-6">
       <div className="space-y-2">
         <h1 className="text-2xl font-semibold tracking-tight text-white">
-          Create account
+          Sign up
         </h1>
         <p className="text-sm text-slate-400">
-          Register with email and password to use Datachain.
+          Create an account with email and password to use Datachain.
         </p>
       </div>
       <RegisterForm />

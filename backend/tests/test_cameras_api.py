@@ -195,3 +195,95 @@ def test_get_camera_not_found(client: TestClient) -> None:
         headers=_auth_headers(token),
     )
     assert response.status_code == 404
+
+
+def test_duplicate_camera_name_rejected(client: TestClient) -> None:
+    token = _register_and_token(client, "unique-name@example.com")
+    headers = _auth_headers(token)
+    first = client.post(
+        "/cameras",
+        headers=headers,
+        json={"name": "Lobby", "stream_url": "http://192.0.2.10/live"},
+    )
+    assert first.status_code == 201
+
+    duplicate = client.post(
+        "/cameras",
+        headers=headers,
+        json={"name": "lobby", "stream_url": "http://192.0.2.11/live"},
+    )
+    assert duplicate.status_code == 409
+    assert "already have a camera" in duplicate.json()["detail"].lower()
+
+
+def test_soft_delete_hides_camera_but_keeps_row(
+    client: TestClient, db_session: Session
+) -> None:
+    from uuid import UUID
+
+    from app.models.camera import Camera
+
+    token = _register_and_token(client, "soft-delete@example.com")
+    headers = _auth_headers(token)
+    created = client.post(
+        "/cameras",
+        headers=headers,
+        json={"name": "Yard", "stream_url": "rtsp://192.0.2.20/stream"},
+    )
+    assert created.status_code == 201
+    camera_id = created.json()["id"]
+
+    deleted = client.delete(f"/cameras/{camera_id}", headers=headers)
+    assert deleted.status_code == 204
+
+    listed = client.get("/cameras", headers=headers)
+    assert listed.status_code == 200
+    assert listed.json()["total"] == 0
+
+    missing = client.get(f"/cameras/{camera_id}", headers=headers)
+    assert missing.status_code == 404
+
+    db_session.expire_all()
+    row = db_session.get(Camera, UUID(camera_id))
+    assert row is not None
+    assert row.deleted_at is not None
+
+    # Soft-deleted name can be reused for a new active camera.
+    again = client.post(
+        "/cameras",
+        headers=headers,
+        json={"name": "Yard", "stream_url": "rtsp://192.0.2.21/stream"},
+    )
+    assert again.status_code == 201
+
+
+def test_list_search_sort_and_status_filter(client: TestClient) -> None:
+    token = _register_and_token(client, "filters@example.com")
+    headers = _auth_headers(token)
+
+    for name, url in (
+        ("Alpha Gate", "http://192.0.2.1/a"),
+        ("Beta Gate", "http://192.0.2.2/b"),
+        ("Yard Cam", "http://192.0.2.3/c"),
+    ):
+        response = client.post(
+            "/cameras",
+            headers=headers,
+            json={"name": name, "stream_url": url},
+        )
+        assert response.status_code == 201
+
+    search = client.get("/cameras?q=gate&sort=name_asc", headers=headers)
+    assert search.status_code == 200
+    names = [item["name"] for item in search.json()["items"]]
+    assert names == ["Alpha Gate", "Beta Gate"]
+
+    # Stub probe marks everything offline — status=offline returns all matches.
+    offline = client.get("/cameras?status=offline&sort=name_desc", headers=headers)
+    assert offline.status_code == 200
+    assert offline.json()["total"] == 3
+    assert offline.json()["items"][0]["name"] == "Yard Cam"
+
+    online = client.get("/cameras?status=online", headers=headers)
+    assert online.status_code == 200
+    assert online.json()["total"] == 0

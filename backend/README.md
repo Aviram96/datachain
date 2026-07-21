@@ -109,14 +109,33 @@ alembic revision --autogenerate -m "describe change"
 alembic downgrade -1
 ```
 
-## Camera online/offline (US-4.6)
+## Camera online/offline (Slice B / CP-B.P4)
 
 List and detail responses include a **`status`** field: `"online"` or `"offline"`. The API probes each camera’s **`stream_url`** on demand (not stored in the database):
 
-- **Rule:** open a short **TCP connection** to the URL’s host and port. Success → **online**; timeout or connection error → **offline**.
+- **HTTP/HTTPS:** short request to the stream URL (HEAD, then ranged GET). Any HTTP response (including 401/404) counts as **online**; network failures → **offline**.
+- **RTSP:** TCP connect to the RTSP port, then a minimal `OPTIONS` request when possible. An open RTSP port counts as reachable.
 - **Default ports** when omitted: `http` → 80, `https` → 443, `rtsp` → 554.
-- **Not validated:** HTTP status codes, RTSP handshake, or whether a video stream is playable—only host reachability.
-- **Timeout:** `CAMERA_PROBE_TIMEOUT_SECONDS` (default `2`, clamped 0.5–10). List endpoints probe cameras on the current page in parallel (up to 10 workers).
+- **Not validated:** whether a full video stream is playable end-to-end (codec/auth beyond basic reachability).
+- **Timeout:** `CAMERA_PROBE_TIMEOUT_SECONDS` (default `2`, clamped 0.5–10). List endpoints probe in parallel (up to 10 workers).
+
+### Camera list query params
+
+| Param | Meaning |
+| ----- | ------- |
+| `page`, `page_size` | Pagination (default page size 10, max 50) |
+| `q` | Case-insensitive name search |
+| `status` | `online` or `offline` (live probe filter) |
+| `sort` | Default `created_at_desc` (newest first). Also `created_at_asc`, `name_asc`, `name_desc` |
+
+### Soft delete and unique names
+
+- `DELETE /cameras/{id}` sets **`deleted_at`** (soft delete). The camera disappears from the dashboard; the row remains so historical `video_records` are not destroyed (`ON DELETE RESTRICT` on `video_records.camera_id`).
+- Active cameras must have a **unique name per user** (case-insensitive); duplicates return HTTP 409.
+
+### Stream attach for ingest (CP-B.P5)
+
+`app.services.camera_stream.attach_camera_stream(db, camera_id)` returns the `stream_url` for an **active** (non-deleted) camera. Continuous FFmpeg ingest/chunking is Slice C.
 
 After changing `.env`, restart uvicorn; reload may not pick up new values.
 

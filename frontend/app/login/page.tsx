@@ -5,7 +5,7 @@ export default function LoginPage() {
     <div className="mx-auto max-w-md space-y-6">
       <div className="space-y-2">
         <h1 className="text-2xl font-semibold tracking-tight text-white">
-          Sign in
+          Log in
         </h1>
         <p className="text-sm text-slate-400">
           Use your Datachain account email and password.
