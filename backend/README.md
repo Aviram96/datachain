@@ -160,9 +160,9 @@ The process writes a continuous **MPEG-TS** stream to **stdout** (suitable for p
 
 **Note:** Use a short sample clip for testing; the file loops forever until you stop the script.
 
-## Camera stream ingest (Slice C / CP-C.P2–P5)
+## Camera stream ingest (Slice C / CP-C.P2–P6)
 
-Receive the **live `stream_url`** of a registered camera with FFmpeg (HTTP/HTTPS or RTSP) and split it into **1-minute `.mp4` segments** under `backend/temp/<camera-id>/`. Each file is named `{camera-uuid}_{YYYYMMDDTHHMMSS}Z.mp4` (camera ID + recording start). End time is start plus the segment duration (default 60s); parse with `app.services.segment_identity.parse_segment_path`. After a file is closed, a **basic integrity check** runs before later stages: complete MP4 (`ftyp` + `moov`), a video stream (ffprobe), and a SHA-256 fingerprint. Failed files stay in `temp/` and are not handed on. Soft-deleted cameras are skipped.
+Receive the **live `stream_url`** of a registered camera with FFmpeg (HTTP/HTTPS or RTSP) and split it into **1-minute `.mp4` segments** under `backend/temp/<camera-id>/`. Each file is named `{camera-uuid}_{YYYYMMDDTHHMMSS}Z.mp4` (camera ID + recording start). End time is start plus the segment duration (default 60s); parse with `app.services.segment_identity.parse_segment_path`. After a file is closed, a **basic integrity check** runs before later stages: complete MP4 (`ftyp` + `moov`), a video stream (ffprobe), and a SHA-256 fingerprint. Failed files stay in `temp/` and are not handed on. **Passing files also stay under `temp/<camera-id>/` until processing succeeds** (IPFS / chain / DB is still a stub; this path does not delete on stub success). Soft-deleted cameras are skipped.
 
 From `backend/` with the venv activated, Postgres running, and migrations applied:
 
@@ -199,6 +199,8 @@ Optional flags: `--temp-dir DIR`, `--duration SECONDS` (default **60**), or env 
 ## Temp cleanup worker (Epic 5, slice 3)
 
 After a chunk is **successfully processed**, a background worker **deletes it from `temp/`** so disk use stays bounded. Epic 6 will replace the stub processor with IPFS upload + chain anchor + DB write; until then the worker logs and deletes (stub success).
+
+This Epic 5 file-chunk path is separate from **camera ingest** (`ingest_camera.py`), which **stages** segments under `temp/<camera-id>/` until processing succeeds and does not delete them yet.
 
 **With chunking** — process and delete each segment as it lands:
 

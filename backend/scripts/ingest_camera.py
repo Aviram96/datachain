@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """CLI: receive registered camera streams and write 1-minute MP4 segments.
 
+Segments are staged under temp/<camera-id>/ until processing succeeds.
+
 Run from backend/ with the venv activated and Postgres available:
 
     python scripts/ingest_camera.py --camera-id UUID
@@ -39,7 +41,10 @@ logging.basicConfig(
 
 def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Receive camera streams and split them into 1-minute MP4 segments.",
+        description=(
+            "Receive camera streams, write 1-minute MP4 segments under temp/, "
+            "and keep them staged until processing succeeds."
+        ),
     )
     target = parser.add_mutually_exclusive_group(required=True)
     target.add_argument(
@@ -62,7 +67,10 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--temp-dir",
         "-t",
         metavar="DIR",
-        help="Base temp directory (default backend/temp; each camera gets a subfolder)",
+        help=(
+            "Base temp directory (default backend/temp; each camera gets a "
+            "subfolder). Segments stay there until processing succeeds."
+        ),
     )
     parser.add_argument(
         "--duration",

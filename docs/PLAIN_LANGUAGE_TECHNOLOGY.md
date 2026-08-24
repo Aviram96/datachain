@@ -216,7 +216,7 @@ Readable explanations of what we use and why—suitable for non-specialists and 
 
 **Why Datachain uses it:** CCTV ingest needs **fixed-duration chunks** (about one minute) for IPFS uploads and chain anchors. FFmpeg is the standard way to turn a continuous feed (real RTSP or a **looped sample MP4**) into those segments without storing one giant file in the API process.
 
-**Where it shows up:** Epic 5 starts with `backend/scripts/simulate_cctv_feed.py` and `backend/app/services/cctv_feed_simulator.py` (loop a local `.mp4` at real-time pace to stdout). **Slice C / CP-C.P2–P5** receive each registered camera URL via `backend/scripts/ingest_camera.py` and write **1-minute** `.mp4` files under `backend/temp/<camera-id>/` using `backend/app/services/video_chunker.py`. Closed segments are checked with **ffprobe** (a companion tool in the FFmpeg install) plus a SHA-256 fingerprint in `backend/app/services/segment_integrity.py` before later stages. **`backend/scripts/chunk_cctv_feed.py`** can still chunk a local file the same way. **`backend/app/services/ffmpeg_supervisor.py`** restarts FFmpeg after crashes during continuous ingest. Install FFmpeg on the host; see `backend/README.md`.
+**Where it shows up:** Epic 5 starts with `backend/scripts/simulate_cctv_feed.py` and `backend/app/services/cctv_feed_simulator.py` (loop a local `.mp4` at real-time pace to stdout). **Slice C / CP-C.P2–P6** receive each registered camera URL via `backend/scripts/ingest_camera.py` and write **1-minute** `.mp4` files under `backend/temp/<camera-id>/` using `backend/app/services/video_chunker.py`. Closed segments are checked with **ffprobe** (a companion tool in the FFmpeg install) plus a SHA-256 fingerprint in `backend/app/services/segment_integrity.py` before later stages, and stay staged in `temp/` until processing succeeds (`backend/app/services/segment_staging.py`). **`backend/scripts/chunk_cctv_feed.py`** can still chunk a local file the same way. **`backend/app/services/ffmpeg_supervisor.py`** restarts FFmpeg after crashes during continuous ingest. Install FFmpeg on the host; see `backend/README.md`.
 
 ### SHA-256 (segment fingerprint)
 
@@ -238,9 +238,9 @@ Readable explanations of what we use and why—suitable for non-specialists and 
 
 **What it is:** A **background worker** watches the **`temp/`** folder for new video chunk files. When processing succeeds (upload and database write in production), it **deletes that file** so old segments do not fill the disk.
 
-**Why Datachain uses it:** Chunks are **temporary staging** until IPFS and the chain record exist. Automatic cleanup keeps laptops and servers healthy during long-running CCTV ingest.
+**Why Datachain uses it:** Chunks are **temporary staging** until IPFS and the chain record exist. Automatic cleanup keeps laptops and servers healthy during long-running CCTV ingest. Camera ingest (Slice C) keeps those staged files in `temp/` until processing succeeds; the Epic 5 file-chunk path still deletes on stub success.
 
-**Where it shows up:** `backend/app/services/chunk_processing_worker.py`, `backend/app/services/temp_chunk_cleanup.py`, `--cleanup-after-success` on `chunk_cctv_feed.py`, and `scripts/process_temp_chunks.py`. Epic 6 swaps the **stub processor** for real Pinata/Web3 steps.
+**Where it shows up:** `backend/app/services/chunk_processing_worker.py`, `backend/app/services/temp_chunk_cleanup.py`, `backend/app/services/segment_staging.py` (ingest keep-until-success), `--cleanup-after-success` on `chunk_cctv_feed.py`, and `scripts/process_temp_chunks.py`. Epic 6 / Slice D swaps the **stub processor** for real Pinata/Web3 steps.
 
 ### Development mocks for IPFS and blockchain (Epic 6, planned)
 

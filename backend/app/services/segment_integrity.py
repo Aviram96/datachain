@@ -8,7 +8,6 @@ Identity (camera + time window) is required for camera ingest filenames.
 from __future__ import annotations
 
 import hashlib
-import logging
 import subprocess
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -20,8 +19,6 @@ from app.services.segment_identity import (
     SegmentIdentityError,
     parse_segment_path,
 )
-
-logger = logging.getLogger(__name__)
 
 DEFAULT_FFPROBE = "ffprobe"
 _HASH_CHUNK_SIZE = 1024 * 1024
@@ -230,12 +227,6 @@ def check_segment(
         size_bytes=size_bytes,
         identity=identity,
     )
-
-
-def hold_segment_for_next_stage(path: Path) -> bool:
-    """Processor that keeps a passing segment in temp/ for later stages."""
-    logger.info("Holding segment for next stage: %s", path.name)
-    return True
 
 
 def ffmpeg_default_probe_executable() -> str:

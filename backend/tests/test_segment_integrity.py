@@ -19,10 +19,10 @@ from app.services.segment_integrity import (
     SegmentIntegrityResult,
     check_segment,
     ffprobe_executable_for,
-    hold_segment_for_next_stage,
     mp4_has_ftyp_and_moov,
     sha256_file,
 )
+from app.services.segment_staging import keep_staged_until_processing_succeeds
 
 CAMERA_ID = UUID("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee")
 
@@ -148,14 +148,14 @@ def test_worker_holds_file_when_delete_on_success_false(tmp_path: Path) -> None:
     assert chunk.exists()
 
 
-def test_integrity_worker_config_for_ingest_holds_files(tmp_path: Path) -> None:
+def test_integrity_worker_config_for_ingest_gates_then_stages(tmp_path: Path) -> None:
     config = CameraIngestConfig(
         camera_id=CAMERA_ID,
         stream_url="rtsp://192.0.2.50/live",
         temp_dir=tmp_path,
     )
     worker_config = integrity_worker_config_for_ingest(config)
-    assert worker_config.delete_on_success is False
     assert worker_config.integrity_check is not None
     assert worker_config.segment_pattern == camera_segment_pattern(CAMERA_ID)
-    assert worker_config.processor is hold_segment_for_next_stage
+    assert worker_config.processor is keep_staged_until_processing_succeeds
+    assert worker_config.delete_on_success is False

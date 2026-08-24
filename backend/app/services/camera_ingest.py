@@ -2,7 +2,8 @@
 
 Slice C / CP-C.P2 attaches the camera URL; CP-C.P3 writes fixed-duration chunks;
 CP-C.P4 names each file from camera ID and recording time; CP-C.P5 checks
-integrity on each closed segment before the next stage.
+integrity on each closed segment before the next stage; CP-C.P6 keeps those
+files under temp/ until processing succeeds.
 """
 
 from __future__ import annotations
@@ -36,7 +37,10 @@ from app.services.segment_integrity import (
     check_segment,
     ffprobe_executable_for,
     file_has_video_stream,
-    hold_segment_for_next_stage,
+)
+from app.services.segment_staging import (
+    staging_dir_for_camera,
+    staging_worker_config,
 )
 from app.services.video_chunker import (
     DEFAULT_CHUNK_DURATION_SECONDS,
@@ -44,7 +48,6 @@ from app.services.video_chunker import (
     build_ffmpeg_chunk_command,
     ensure_temp_dir,
     resolve_chunk_duration_seconds,
-    resolve_temp_dir,
 )
 
 logger = logging.getLogger(__name__)
@@ -62,9 +65,8 @@ class CameraIngestConfig:
 
 
 def camera_chunk_dir(camera_id: UUID, base: Path | None = None) -> Path:
-    """Per-camera folder under temp/ so concurrent ingest does not collide."""
-    root = base.resolve() if base is not None else resolve_temp_dir()
-    return (root / str(camera_id)).resolve()
+    """Per-camera staging folder under temp/ (see ``staging_dir_for_camera``)."""
+    return staging_dir_for_camera(camera_id, base)
 
 
 def chunker_config_for_ingest(config: CameraIngestConfig) -> VideoChunkerConfig:
@@ -93,7 +95,7 @@ def build_ffmpeg_receive_command(config: CameraIngestConfig) -> list[str]:
 def integrity_worker_config_for_ingest(
     config: CameraIngestConfig,
 ) -> ChunkProcessingWorkerConfig:
-    """Worker that integrity-checks closed segments and holds them in temp/."""
+    """Worker that integrity-checks closed segments and stages them under temp/."""
     chunk = chunker_config_for_ingest(config)
     ffprobe = ffprobe_executable_for(config.ffmpeg_executable)
 
@@ -107,11 +109,9 @@ def integrity_worker_config_for_ingest(
             ),
         )
 
-    return ChunkProcessingWorkerConfig(
+    return staging_worker_config(
         temp_dir=chunk.temp_dir,
         segment_pattern=chunk.segment_pattern,
-        processor=hold_segment_for_next_stage,
-        delete_on_success=False,
         integrity_check=_check,
     )
 
@@ -188,7 +188,8 @@ class CameraIngest:
         chunk_config = chunker_config_for_ingest(self._config)
         ensure_temp_dir(chunk_config.temp_dir)
         logger.info(
-            "Chunking camera %s from %s into %ss segments under %s",
+            "Chunking camera %s from %s into %ss segments under %s "
+            "(staged until processing succeeds)",
             self._config.camera_id,
             self._config.stream_url,
             chunk_config.segment_duration_seconds,

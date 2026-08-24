@@ -41,9 +41,10 @@ class ChunkProcessingWorkerConfig:
 class ChunkProcessingWorker:
     """Poll temp/ for new chunk files; optionally integrity-check, then process.
 
-    When ``delete_on_success`` is true (Epic 5 cleanup), successful processing
-    removes the file. Camera ingest sets it false so checked segments stay in
-    temp/ for later stages.
+    When ``delete_on_success`` is true (Epic 5 file-chunk cleanup), successful
+    processing removes the file. Camera ingest uses the staging config
+    (``delete_on_success=False``) so segments stay under temp/ until later
+    processing succeeds (CP-C.P6). Deletion after success is CP-C.P7.
     """
 
     def __init__(self, config: ChunkProcessingWorkerConfig) -> None:
@@ -63,8 +64,10 @@ class ChunkProcessingWorker:
             daemon=True,
         )
         self._thread.start()
+        role = "cleanup" if self._config.delete_on_success else "staging"
         logger.info(
-            "Chunk cleanup worker watching %s (poll every %ss)",
+            "Chunk %s worker watching %s (poll every %ss)",
+            role,
             self._config.temp_dir,
             self._config.poll_interval_seconds,
         )
