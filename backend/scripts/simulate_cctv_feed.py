@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""CLI: loop a local MP4 as a continuous CCTV-style feed (Epic 5, slice 1).
+"""CLI: loop a local MP4 as a continuous CCTV-style feed (Slice C / CP-C.P1).
 
 Run from backend/ with the venv activated:
 

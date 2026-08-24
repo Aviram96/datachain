@@ -236,14 +236,14 @@ Epics **1–10** above remain historical delivery notes for the original roadmap
 | ----- | ----- | ------ |
 | A | Register and Login | Done — all CP-A stories Implemented (see `docs/CLIENT_PROGRAMMER_USER_STORIES.md`) |
 | B | Camera dashboard management | Done — all CP-B stories Implemented (search/filter/sort, soft delete, unique names, detail page) |
-| C | Video processing pipeline | Not started — all stories TBD |
+| C | Video processing pipeline | In progress — CP-C.P1 Implemented (local-file CCTV simulator); P2–P8 and C1 TBD |
 | D | IPFS storage and blockchain anchoring | Not started — all stories TBD |
 | E | Video management and verification | Not started — all stories TBD |
 
 
 **Exit criteria**: Every story in `docs/CLIENT_PROGRAMMER_USER_STORIES.md` is Implemented, Deferred (with reason), or explicitly Declined; open decisions in that file are resolved.
 
-**Progress note**: Slice A complete 2026-07-21 (including landing refinement: toolbar-free home, problem/solution, signed-in → `/cameras`). Slice B complete 2026-07-21 — apply Alembic revision `20260721_000002` for `deleted_at` + unique active name.
+**Progress note**: Slice A complete 2026-07-21 (including landing refinement: toolbar-free home, problem/solution, signed-in → `/cameras`). Slice B complete 2026-07-21 — apply Alembic revision `20260721_000002` for `deleted_at` + unique active name. Slice C started 2026-08-24 — **CP-C.P1** (simulate continuous feed from a local `.mp4`) is the documented entry point; see `docs/CLIENT_PROGRAMMER_USER_STORIES.md`.
 
 ---
 

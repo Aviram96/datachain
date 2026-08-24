@@ -1,4 +1,4 @@
-"""Loop a local MP4 as a continuous CCTV-style feed via FFmpeg (no chunking yet)."""
+"""Loop a local MP4 as a continuous CCTV-style feed via FFmpeg (Slice C / CP-C.P1)."""
 
 from __future__ import annotations
 

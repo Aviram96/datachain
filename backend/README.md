@@ -139,9 +139,9 @@ List and detail responses include a **`status`** field: `"online"` or `"offline"
 
 After changing `.env`, restart uvicorn; reload may not pick up new values.
 
-## Simulated CCTV feed (Epic 5, slice 1)
+## Simulated CCTV feed (Slice C / CP-C.P1)
 
-Before chunking lands, you can **loop a local `.mp4` at real-time speed** as if it were a live camera feed. This uses **FFmpeg** on your machine (install separately; not a Python package).
+This is the **Slice C hardware-free entry point**: **loop a local `.mp4` at real-time speed** as if it were a live camera feed, so ingest can be developed without RTSP cameras. This uses **FFmpeg** on your machine (install separately; not a Python package).
 
 **Prerequisites:** FFmpeg on `PATH` ([download](https://ffmpeg.org/download.html)).
 

@@ -222,7 +222,7 @@ Readable explanations of what we use and why—suitable for non-specialists and 
 
 **What it is:** For local development, a **simulated feed** replays one **`.mp4` file in a loop** at real-time speed instead of connecting to a physical camera or RTSP URL. That lets you test the pipeline without hardware.
 
-**Why Datachain uses it:** Epic 5 needs a **repeatable** input before production RTSP ingest. Looping a sample clip exercises FFmpeg, chunking, and later upload/anchor steps the same way every run.
+**Why Datachain uses it:** Slice C needs a **repeatable** input before live camera ingest. Looping a sample clip exercises FFmpeg, chunking, and later upload/anchor steps the same way every run.
 
 **Where it shows up:** `CCTV_SOURCE_MP4` in `backend/.env.example`; CLI `python scripts/simulate_cctv_feed.py` from `backend/`.
 
