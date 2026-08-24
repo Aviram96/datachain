@@ -135,7 +135,7 @@ List and detail responses include a **`status`** field: `"online"` or `"offline"
 
 ### Stream attach for ingest (CP-B.P5)
 
-`app.services.camera_stream.attach_camera_stream(db, camera_id)` returns the `stream_url` for an **active** (non-deleted) camera. Continuous FFmpeg ingest/chunking is Slice C.
+`app.services.camera_stream.attach_camera_stream(db, camera_id)` returns the `stream_url` for an **active** (non-deleted) camera. Continuous FFmpeg receive is Slice C / **CP-C.P2** (`scripts/ingest_camera.py`).
 
 After changing `.env`, restart uvicorn; reload may not pick up new values.
 
@@ -159,6 +159,22 @@ python scripts/simulate_cctv_feed.py
 The process writes a continuous **MPEG-TS** stream to **stdout** (suitable for piping into the chunking step in the next slice). Press **Ctrl+C** to stop; the script terminates FFmpeg cleanly.
 
 **Note:** Use a short sample clip for testing; the file loops forever until you stop the script.
+
+## Camera stream ingest (Slice C / CP-C.P2)
+
+Receive the **live `stream_url`** of a registered camera with FFmpeg (HTTP/HTTPS or RTSP). This keeps the stream attached continuously so later Slice C steps can chunk it. Soft-deleted cameras are skipped.
+
+From `backend/` with the venv activated, Postgres running, and migrations applied:
+
+```powershell
+# One camera (writes MPEG-TS to stdout; pipe into a later chunking step)
+python scripts/ingest_camera.py --camera-id 00000000-0000-0000-0000-000000000001
+
+# Every active camera (one FFmpeg process per camera)
+python scripts/ingest_camera.py --all
+```
+
+Ctrl+C stops ingest. RTSP uses TCP transport. Requires FFmpeg on `PATH`.
 
 ## Video chunking (Epic 5, slice 2)
 

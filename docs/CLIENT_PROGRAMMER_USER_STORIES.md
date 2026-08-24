@@ -143,7 +143,7 @@ _(Mostly invisible to the user; continuity and offline status after capture fail
 | ID | Story | Status |
 | -- | ----- | ------ |
 | CP-C.P1 | As the system, I want to simulate a continuous CCTV stream from a local file, so the pipeline can be developed without live hardware. | Implemented — `backend/scripts/simulate_cctv_feed.py` loops a local `.mp4` via `cctv_feed_simulator.py`; tests in `backend/tests/test_cctv_feed_simulator.py` |
-| CP-C.P2 | As the system, I want to receive the video stream from each connected camera, so footage can be processed continuously. | TBD |
+| CP-C.P2 | As the system, I want to receive the video stream from each connected camera, so footage can be processed continuously. | Implemented — `backend/scripts/ingest_camera.py` (`--camera-id` / `--all`) via `camera_ingest.py`; uses `attach_camera_stream`; tests in `backend/tests/test_camera_ingest.py` |
 | CP-C.P3 | As the system, I want to split the stream into one-minute `.mp4` segments (FFmpeg), so each segment can be stored and verified independently. | TBD |
 | CP-C.P4 | As the system, I want each segment named uniquely from camera ID and recording time, and associated with camera plus start/end timestamps. | TBD |
 | CP-C.P5 | As the system, I want a basic integrity check on each segment before the next stage. | TBD |
@@ -155,7 +155,8 @@ _(Mostly invisible to the user; continuity and offline status after capture fail
 ### Slice C notes
 
 - **CP-C.P1** uses the existing local-file simulator as the Slice C hardware-free entry point (not live RTSP). Run from `backend/`: `python scripts/simulate_cctv_feed.py --source path/to/sample.mp4` (or `CCTV_SOURCE_MP4`). See `backend/README.md`.
-- Remaining Slice C stories (P2–P8, C1) are still TBD; camera-attached ingest is next.
+- **CP-C.P2** attaches FFmpeg to each active camera’s `stream_url`. Run from `backend/`: `python scripts/ingest_camera.py --camera-id UUID` or `--all`. Chunking those streams is next (P3).
+- Remaining Slice C stories (P3–P8, C1) are still TBD.
 
 
 ---
@@ -270,3 +271,4 @@ Add here only if the teacher requires them in the client–programmer pack.
 | 2026-07-21 | Landing refinement: CP-A.C1a–C1g / P5–P7 — toolbar-free richer home, auto-redirect signed-in users to `/cameras`. |
 | 2026-07-21 | App-wide UI aligned to landing palette (header, auth, cameras, toasts). |
 | 2026-08-24 | Slice C started: CP-C.P1 Implemented (local `.mp4` continuous feed simulator). |
+| 2026-08-24 | Slice C CP-C.P2 Implemented: FFmpeg receive for registered camera stream URLs. |
