@@ -52,11 +52,12 @@ Quick API check: [http://127.0.0.1:8000/health](http://127.0.0.1:8000/health) sh
 
 ## Routes
 
-- `/` — Home
-- `/login` — Sign in (error toast on wrong password); header updates after sign-in
-- `/register` — Create account (error toast on duplicate email)
-- Header — When signed in: **Signed in as** email + **Log out** (clears `datachain_access_token`); when signed out: Sign in / Register links
-- `/project-status` — Example secondary page
+- `/` — Marketing landing (no top toolbar): project / problem / solution + Sign up / Log in; signed-in users redirect to `/cameras`
+- `/login` — Log in (error toast on wrong password); header updates after sign-in
+- `/register` — Sign up (error toast on duplicate email)
+- Header (app pages) — When signed in: **Signed in as** email + **Log out**; when signed out: Log in / Sign up
+- `/cameras` — Camera dashboard (main app surface after auth)
+- `/project-status` — Internal/dev status page (not linked from landing)
 
 Expired or invalid JWTs clear `datachain_access_token` in localStorage and redirect to `/login` (toast on protected pages). Session is checked on app load via `GET /auth/me` and on any authenticated API call that returns 401.
 

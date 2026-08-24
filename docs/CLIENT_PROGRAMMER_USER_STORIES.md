@@ -34,9 +34,16 @@ Use this file—not the raw Word draft—as the checklist for audit and implemen
 
 | ID | Story | Status |
 | -- | ----- | ------ |
-| CP-A.C1 | As a user, I want to navigate to the opening page of the site, so I can register or log in. | Implemented — `/` with Sign up / Log in CTAs (`frontend/components/home-auth-cta.tsx`) |
-| CP-A.C2 | As a user, I want a Sign up control that takes me to the registration page, so I can create an account. | Implemented — home CTA + header + login-page link → `/register` |
-| CP-A.C3 | As a user, I want a Log in control that takes me to the login page, so I can access my account. | Implemented — home CTA + header + register-page link → `/login` |
+| CP-A.C1 | As a visitor, I want an opening page that briefly presents the **project**, the **problem**, and the **solution**, so I understand Datachain before I register or log in. | Implemented — richer landing at `/` (`frontend/components/landing-page.tsx`) |
+| CP-A.C1a | As a visitor, I want the opening page **without a top navigation toolbar**, so the first screen focuses on the product story and CTAs. | Implemented — marketing layout has no `SiteHeader` |
+| CP-A.C1b | As a visitor, I want to read a short **problem** section (centralized CCTV can be silently altered or deleted), so I understand why integrity matters. | Implemented — Problem section on landing |
+| CP-A.C1c | As a visitor, I want to read a short **solution** section (video on IPFS, CIDs anchored on-chain, metadata in the app), so I understand how Datachain works at a high level. | Implemented — Solution section on landing |
+| CP-A.C1d | As a visitor, I want **Sign up** and **Log in** buttons **below** that description (not in a top bar on this page), so I can start using the product. | Implemented — CTAs under hero copy (and again under solution) |
+| CP-A.C1e | As a signed-in user who opens `/`, I want to be **auto-redirected to `/cameras`**, so I land on the main camera-management page. | Implemented — `router.replace('/cameras')` when session exists |
+| CP-A.C1f | Project status link on the landing / site presentation. | Declined — not relevant for site presentation |
+| CP-A.C1g | As a visitor on mobile, I want the same content and CTAs to remain readable and usable without a top bar. | Implemented — responsive stacked CTAs and fluid type |
+| CP-A.C2 | As a user, I want a Sign up control that takes me to the registration page, so I can create an account. | Implemented — landing CTA + app header + login-page link → `/register` |
+| CP-A.C3 | As a user, I want a Log in control that takes me to the login page, so I can access my account. | Implemented — landing CTA + app header + register-page link → `/login` |
 | CP-A.C4 | As a user, I want to register with an email and password, so I can access the platform securely. | Implemented — `RegisterForm` + `POST /auth/register` |
 | CP-A.C5 | As a user, I want to know the password requirements before submitting, so I can create a strong password. | Implemented — hint from `frontend/lib/password-requirements.ts` (8 chars, max 200, 72 UTF-8 bytes) |
 | CP-A.C6 | As a user, I want an error message if my password does not meet the requirements, so I can correct it and register. | Implemented — client toast via `passwordRequirementsError`; server 422 still enforced |
@@ -59,15 +66,17 @@ Use this file—not the raw Word draft—as the checklist for audit and implemen
 | CP-A.P2 | As the system, I want authenticated sessions via JWT with a defined expiry, so access is time-bounded and APIs can authorize requests. | Implemented — `jwt_tokens.py` + `JWT_ACCESS_TOKEN_EXPIRE_MINUTES` |
 | CP-A.P3 | As the system, I want the client to detect expired or invalid sessions and redirect to login, so protected actions do not fail silently. | Implemented — `auth-provider.tsx`, `auth-fetch.ts`, `require-auth.tsx` |
 | CP-A.P4 | As a developer, I want PyTest coverage for registration and login APIs (success and failure cases), so auth behavior stays correct. | Implemented — `backend/tests/test_auth_api.py` |
+| CP-A.P5 | As the frontend, I want the global site header **hidden on `/`** (and shown on app pages such as `/login`, `/register`, `/cameras`), so the landing page can be toolbar-free while the rest of the app stays navigable. | Implemented — `(marketing)` vs `(app)` route groups |
+| CP-A.P6 | As the frontend, I want the home route to render a dedicated landing layout (brand, problem, solution, CTA group) without relying on the global header for primary auth entry. | Implemented — `landing-page.tsx` + marketing layout |
+| CP-A.P7 | As the frontend, I want landing CTAs to reuse existing routes (`/register`, `/login`, `/cameras`) and auth state, so behavior stays consistent with Slice A. | Implemented — CTAs + signed-in redirect to `/cameras` |
 
 
 ### Slice A notes (from draft)
 
 - Password requirements are defined and shown in the UI (aligned with backend `UserRegister`).
-- Post-register and post-login destination: **cameras page**.
-- Slice A delivery: 2026-07-21 (home CTAs, labels, redirects, password UX, auth API tests).
+- Post-register and post-login destination: **cameras page** (main app surface for camera management).
+- Landing decisions (2026-07-21): no top toolbar on `/`; richer atmosphere/hero; no project-status link; signed-in visitors to `/` auto-redirect to `/cameras`; mobile-usable (C1g).
 
----
 
 ## Slice B — Camera dashboard management
 
@@ -225,7 +234,7 @@ _(Users consume results via playback and verification in Slice E; anchoring itse
 
 | Slice | Client | Programmer | Focus |
 | ----- | ------ | ---------- | ----- |
-| A | CP-A.C1–C14 | CP-A.P1–P4 | Auth & session |
+| A | CP-A.C1–C14 (+ C1a–C1g); P1–P7 | Auth, session, landing |
 | B | CP-B.C1–C15 | CP-B.P1–P6 | Cameras |
 | C | CP-C.C1 | CP-C.P1–P8 | Ingest & chunking |
 | D | CP-D.C1 | CP-D.P1–P9 | IPFS & chain |
@@ -252,3 +261,5 @@ Add here only if the teacher requires them in the client–programmer pack.
 | 2026-07-21 | Initial organized doc from `US.docx`: deduplicated, client/programmer split, slices A–E, open decisions captured, statuses TBD. |
 | 2026-07-21 | Slice A marked Implemented: home Sign up/Log in, redirects to `/cameras`, password-requirement UX, `test_auth_api.py`. |
 | 2026-07-21 | Slice B marked Implemented: search/filter/sort, soft delete, unique names, camera detail page, stream probe + attach. |
+| 2026-07-21 | Landing refinement: CP-A.C1a–C1g / P5–P7 — toolbar-free richer home, auto-redirect signed-in users to `/cameras`. |
+| 2026-07-21 | App-wide UI aligned to landing palette (header, auth, cameras, toasts). |

@@ -1,17 +1,18 @@
 import { RegisterForm } from "@/components/register-form";
+import { ui } from "@/lib/ui";
 
 export default function RegisterPage() {
   return (
     <div className="mx-auto max-w-md space-y-6">
       <div className="space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight text-white">
-          Sign up
-        </h1>
-        <p className="text-sm text-slate-400">
+        <h1 className={ui.pageTitle}>Sign up</h1>
+        <p className={ui.pageSubtitle}>
           Create an account with email and password to use Datachain.
         </p>
       </div>
-      <RegisterForm />
+      <div className={ui.panel}>
+        <RegisterForm />
+      </div>
     </div>
   );
 }

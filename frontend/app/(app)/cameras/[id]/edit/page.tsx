@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -14,6 +14,7 @@ import {
   updateCamera,
   type CameraPublic,
 } from "@/lib/cameras-api";
+import { ui } from "@/lib/ui";
 
 export default function EditCameraPage() {
   const params = useParams();
@@ -53,22 +54,17 @@ export default function EditCameraPage() {
     <RequireAuth>
       <div className="space-y-6">
         <div>
-          <Link
-            href={`/cameras/${cameraId}`}
-            className="text-sm text-slate-400 hover:text-slate-200"
-          >
+          <Link href={`/cameras/${cameraId}`} className={ui.backLink}>
             ← Camera
           </Link>
-          <h1 className="mt-2 text-2xl font-semibold text-white">
-            Edit camera
-          </h1>
-          <p className="mt-1 text-sm text-slate-400">
+          <h1 className={`mt-2 ${ui.pageTitle}`}>Edit camera</h1>
+          <p className={`mt-1 ${ui.pageSubtitle}`}>
             Update name, stream URL, or location.
           </p>
         </div>
 
         {loading ? (
-          <p className="text-slate-400">Loading camera…</p>
+          <p className={ui.muted}>Loading camera…</p>
         ) : camera ? (
           <CameraForm
             key={camera.id}
@@ -95,7 +91,7 @@ export default function EditCameraPage() {
             }}
           />
         ) : (
-          <p className="text-slate-400">Camera not found.</p>
+          <p className={ui.muted}>Camera not found.</p>
         )}
       </div>
     </RequireAuth>

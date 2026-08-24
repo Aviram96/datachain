@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -13,6 +13,7 @@ import {
   getCamera,
   type CameraPublic,
 } from "@/lib/cameras-api";
+import { ui } from "@/lib/ui";
 
 export default function CameraDetailPage() {
   return (
@@ -72,16 +73,16 @@ function CameraDetailContent() {
   }
 
   if (loading) {
-    return <p className="text-slate-400">Loading camera…</p>;
+    return <p className={ui.muted}>Loading camera…</p>;
   }
 
   if (!camera) {
     return (
       <div className="space-y-4">
-        <Link href="/cameras" className="text-sm text-slate-400 hover:text-slate-200">
+        <Link href="/cameras" className={ui.backLink}>
           ← Cameras
         </Link>
-        <p className="text-slate-300">Camera not found.</p>
+        <p className={ui.muted}>Camera not found.</p>
       </div>
     );
   }
@@ -91,34 +92,25 @@ function CameraDetailContent() {
   return (
     <div className="space-y-6">
       <div>
-        <Link href="/cameras" className="text-sm text-slate-400 hover:text-slate-200">
+        <Link href="/cameras" className={ui.backLink}>
           ← Cameras
         </Link>
         <div className="mt-2 flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-2">
-            <h1 className="text-2xl font-semibold text-white">{camera.name}</h1>
-            <span
-              className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium ${
-                online
-                  ? "bg-emerald-950/80 text-emerald-300 ring-1 ring-emerald-800/60"
-                  : "bg-slate-800 text-slate-400 ring-1 ring-slate-700"
-              }`}
-            >
+            <h1 className={ui.pageTitle}>{camera.name}</h1>
+            <span className={online ? ui.badgeOnline : ui.badgeOffline}>
               {online ? "Online" : "Offline"}
             </span>
           </div>
-          <div className="flex flex-wrap gap-3 text-sm">
-            <Link
-              href={`/cameras/${camera.id}/edit`}
-              className="rounded-md border border-slate-600 px-3 py-1.5 text-slate-200 hover:border-slate-500"
-            >
+          <div className="flex flex-wrap gap-3">
+            <Link href={`/cameras/${camera.id}/edit`} className={ui.btnSecondary}>
               Edit
             </Link>
             {!confirmingDelete ? (
               <button
                 type="button"
                 onClick={() => setConfirmingDelete(true)}
-                className="rounded-md border border-red-800 px-3 py-1.5 text-red-300 hover:border-red-700"
+                className={ui.btnGhostDanger}
               >
                 Delete
               </button>
@@ -128,8 +120,8 @@ function CameraDetailContent() {
       </div>
 
       {confirmingDelete ? (
-        <div className="rounded-md border border-red-900/60 bg-red-950/30 p-4 text-sm">
-          <p className="text-slate-200">
+        <div className={ui.dangerPanel}>
+          <p>
             Remove this camera from your dashboard? Historical recordings stay
             available for evidence.
           </p>
@@ -138,7 +130,7 @@ function CameraDetailContent() {
               type="button"
               disabled={deleting}
               onClick={() => void handleDelete()}
-              className="rounded-md bg-red-700 px-3 py-1.5 text-white hover:bg-red-600 disabled:opacity-60"
+              className={ui.btnDanger}
             >
               {deleting ? "Removing…" : "Remove"}
             </button>
@@ -146,7 +138,7 @@ function CameraDetailContent() {
               type="button"
               disabled={deleting}
               onClick={() => setConfirmingDelete(false)}
-              className="rounded-md border border-slate-600 px-3 py-1.5 text-slate-300 hover:border-slate-500 disabled:opacity-60"
+              className={ui.btnSecondary}
             >
               Cancel
             </button>
@@ -154,26 +146,26 @@ function CameraDetailContent() {
         </div>
       ) : null}
 
-      <dl className="space-y-3 rounded-lg border border-slate-800 bg-slate-900/50 p-4 text-sm">
+      <dl className={`space-y-3 text-sm ${ui.panel}`}>
         <div>
-          <dt className="text-slate-500">Stream URL</dt>
-          <dd className="break-all text-slate-200">{camera.stream_url}</dd>
+          <dt className={ui.hint}>Stream URL</dt>
+          <dd className="break-all text-landing-ink/85">{camera.stream_url}</dd>
         </div>
         <div>
-          <dt className="text-slate-500">Location</dt>
-          <dd className="text-slate-200">{camera.location || "—"}</dd>
+          <dt className={ui.hint}>Location</dt>
+          <dd className="text-landing-ink/85">{camera.location || "—"}</dd>
         </div>
         <div>
-          <dt className="text-slate-500">Added</dt>
-          <dd className="text-slate-200">
+          <dt className={ui.hint}>Added</dt>
+          <dd className="text-landing-ink/85">
             {new Date(camera.created_at).toLocaleString()}
           </dd>
         </div>
       </dl>
 
-      <section className="space-y-2 rounded-lg border border-dashed border-slate-700 p-4">
-        <h2 className="text-lg font-medium text-white">Recordings</h2>
-        <p className="text-sm text-slate-400">
+      <section className={ui.panelMuted}>
+        <h2 className={`${ui.sectionTitle} text-left`}>Recordings</h2>
+        <p className={`mt-2 text-left ${ui.muted}`}>
           Search, watch, download, and verify videos for this camera will appear
           here (Slice E — Video management).
         </p>

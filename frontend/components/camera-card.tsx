@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 
 import type { CameraPublic, CameraStatus } from "@/lib/cameras-api";
+import { ui } from "@/lib/ui";
 
 type CameraCardProps = {
   camera: CameraPublic;
@@ -25,13 +26,13 @@ export function CameraCard({ camera, onDelete }: CameraCardProps) {
   }
 
   return (
-    <article className="flex flex-col rounded-lg border border-slate-800 bg-slate-900/60 p-4">
+    <article className={ui.panel}>
       <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0 space-y-1">
-          <h2 className="text-lg font-medium text-white">
+        <div className="min-w-0 space-y-2">
+          <h2 className="text-lg font-semibold text-landing-ink">
             <Link
               href={`/cameras/${camera.id}`}
-              className="hover:text-emerald-300"
+              className="transition hover:text-landing-accent"
             >
               {camera.name}
             </Link>
@@ -39,15 +40,12 @@ export function CameraCard({ camera, onDelete }: CameraCardProps) {
           <StatusBadge status={camera.status} />
         </div>
         <div className="flex shrink-0 flex-wrap justify-end gap-3 text-sm">
-          <Link
-            href={`/cameras/${camera.id}`}
-            className="text-emerald-400 hover:text-emerald-300"
-          >
+          <Link href={`/cameras/${camera.id}`} className={ui.link}>
             Open
           </Link>
           <Link
             href={`/cameras/${camera.id}/edit`}
-            className="text-slate-300 hover:text-white"
+            className="text-landing-ink/70 transition hover:text-landing-ink"
           >
             Edit
           </Link>
@@ -55,7 +53,7 @@ export function CameraCard({ camera, onDelete }: CameraCardProps) {
             <button
               type="button"
               onClick={() => setConfirming(true)}
-              className="text-red-400 hover:text-red-300"
+              className={ui.btnGhostDanger}
             >
               Delete
             </button>
@@ -64,18 +62,19 @@ export function CameraCard({ camera, onDelete }: CameraCardProps) {
       </div>
 
       {confirming ? (
-        <div className="mt-3 rounded-md border border-red-900/60 bg-red-950/30 p-3 text-sm">
-          <p className="text-slate-200">
+        <div className={`mt-3 ${ui.dangerPanel}`}>
+          <p>
             Remove{" "}
-            <span className="font-medium text-white">{camera.name}</span> from
-            your dashboard? Historical recordings stay available for evidence.
+            <span className="font-semibold text-landing-ink">{camera.name}</span>{" "}
+            from your dashboard? Historical recordings stay available for
+            evidence.
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             <button
               type="button"
               disabled={deleting}
               onClick={() => void handleConfirmDelete()}
-              className="rounded-md bg-red-700 px-3 py-1.5 text-white hover:bg-red-600 disabled:opacity-60"
+              className={ui.btnDanger}
             >
               {deleting ? "Removing…" : "Remove"}
             </button>
@@ -83,7 +82,7 @@ export function CameraCard({ camera, onDelete }: CameraCardProps) {
               type="button"
               disabled={deleting}
               onClick={() => setConfirming(false)}
-              className="rounded-md border border-slate-600 px-3 py-1.5 text-slate-300 hover:border-slate-500 disabled:opacity-60"
+              className={ui.btnSecondary}
             >
               Cancel
             </button>
@@ -91,17 +90,20 @@ export function CameraCard({ camera, onDelete }: CameraCardProps) {
         </div>
       ) : null}
 
-      <dl className="mt-3 space-y-2 text-sm">
+      <dl className="mt-4 space-y-2 text-sm">
         <div>
-          <dt className="text-slate-500">Stream URL</dt>
-          <dd className="truncate text-slate-300" title={camera.stream_url}>
+          <dt className={ui.hint}>Stream URL</dt>
+          <dd
+            className="truncate text-landing-ink/80"
+            title={camera.stream_url}
+          >
             {camera.stream_url}
           </dd>
         </div>
         {camera.location ? (
           <div>
-            <dt className="text-slate-500">Location</dt>
-            <dd className="text-slate-300">{camera.location}</dd>
+            <dt className={ui.hint}>Location</dt>
+            <dd className="text-landing-ink/80">{camera.location}</dd>
           </div>
         ) : null}
       </dl>
@@ -112,16 +114,10 @@ export function CameraCard({ camera, onDelete }: CameraCardProps) {
 function StatusBadge({ status }: { status: CameraStatus }) {
   const online = status === "online";
   return (
-    <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium ${
-        online
-          ? "bg-emerald-950/80 text-emerald-300 ring-1 ring-emerald-800/60"
-          : "bg-slate-800 text-slate-400 ring-1 ring-slate-700"
-      }`}
-    >
+    <span className={online ? ui.badgeOnline : ui.badgeOffline}>
       <span
         className={`h-1.5 w-1.5 rounded-full ${
-          online ? "bg-emerald-400" : "bg-slate-500"
+          online ? "bg-landing-accent" : "bg-landing-ink/35"
         }`}
         aria-hidden
       />

@@ -13,6 +13,7 @@ import {
   type CameraSort,
   type CameraStatus,
 } from "@/lib/cameras-api";
+import { ui } from "@/lib/ui";
 
 import { CameraCard } from "./camera-card";
 import { useToast } from "./toast-provider";
@@ -112,8 +113,8 @@ export function CamerasDashboard() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-white">Cameras</h1>
-          <p className="text-sm text-slate-400">
+          <h1 className={ui.pageTitle}>Cameras</h1>
+          <p className={`mt-1 ${ui.pageSubtitle}`}>
             {loading
               ? "Loading…"
               : total === 0
@@ -123,17 +124,17 @@ export function CamerasDashboard() {
                 : `${total} camera${total === 1 ? "" : "s"}`}
           </p>
         </div>
-        <Link
-          href="/cameras/new"
-          className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500"
-        >
+        <Link href="/cameras/new" className={ui.btnPrimary}>
           Add camera
         </Link>
       </div>
 
-      <div className="flex flex-col gap-3 rounded-lg border border-slate-800 bg-slate-900/40 p-4 sm:flex-row sm:flex-wrap sm:items-end">
-        <form onSubmit={applySearch} className="flex min-w-[12rem] flex-1 flex-col gap-1">
-          <label htmlFor="camera-search" className="text-xs text-slate-500">
+      <div className={`flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end ${ui.panel}`}>
+        <form
+          onSubmit={applySearch}
+          className="flex min-w-[12rem] flex-1 flex-col gap-1.5"
+        >
+          <label htmlFor="camera-search" className={ui.hint}>
             Search by name
           </label>
           <div className="flex gap-2">
@@ -143,26 +144,23 @@ export function CamerasDashboard() {
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               placeholder="Camera name"
-              className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 outline-none ring-emerald-500/50 focus:ring-2"
+              className={ui.input}
             />
-            <button
-              type="submit"
-              className="rounded-md border border-slate-600 px-3 py-2 text-sm text-slate-200 hover:border-slate-500"
-            >
+            <button type="submit" className={ui.btnSecondary}>
               Search
             </button>
           </div>
         </form>
 
-        <div className="flex flex-col gap-1">
-          <label htmlFor="camera-status" className="text-xs text-slate-500">
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="camera-status" className={ui.hint}>
             Status
           </label>
           <select
             id="camera-status"
             value={statusFilter}
             onChange={(e) => onStatusChange(e.target.value as StatusFilter)}
-            className="rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
+            className={ui.select}
           >
             <option value="">All</option>
             <option value="online">Online</option>
@@ -170,15 +168,15 @@ export function CamerasDashboard() {
           </select>
         </div>
 
-        <div className="flex flex-col gap-1">
-          <label htmlFor="camera-sort" className="text-xs text-slate-500">
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="camera-sort" className={ui.hint}>
             Sort (default: newest first)
           </label>
           <select
             id="camera-sort"
             value={sort}
             onChange={(e) => onSortChange(e.target.value as CameraSort)}
-            className="rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
+            className={ui.select}
           >
             <option value="created_at_desc">Date added (newest)</option>
             <option value="created_at_asc">Date added (oldest)</option>
@@ -189,11 +187,9 @@ export function CamerasDashboard() {
       </div>
 
       {loading ? (
-        <p className="text-slate-400">Loading cameras…</p>
+        <p className={ui.muted}>Loading cameras…</p>
       ) : cameras.length === 0 ? (
-        <p className="rounded-lg border border-dashed border-slate-700 p-8 text-center text-slate-400">
-          {emptyMessage}
-        </p>
+        <p className={ui.panelMuted}>{emptyMessage}</p>
       ) : (
         <CamerasGrid cameras={cameras} onDelete={handleDelete} />
       )}
@@ -233,8 +229,8 @@ function PaginationControls({
   const end = Math.min(page * pageSize, total);
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-4 border-t border-slate-800 pt-4">
-      <p className="text-sm text-slate-500">
+    <div className="flex flex-wrap items-center justify-between gap-4 border-t border-landing-ink/10 pt-4">
+      <p className={ui.hint}>
         Showing {start}–{end} of {total} cameras
       </p>
       <div className="flex items-center gap-3">
@@ -242,18 +238,18 @@ function PaginationControls({
           type="button"
           disabled={page <= 1 || loading}
           onClick={() => onPageChange(page - 1)}
-          className="rounded-md border border-slate-600 px-3 py-1.5 text-sm text-slate-300 hover:border-slate-500 disabled:cursor-not-allowed disabled:opacity-50"
+          className={ui.btnSecondary}
         >
           Previous
         </button>
-        <span className="text-sm text-slate-400">
+        <span className={ui.muted}>
           Page {page} of {pages}
         </span>
         <button
           type="button"
           disabled={page >= pages || loading}
           onClick={() => onPageChange(page + 1)}
-          className="rounded-md border border-slate-600 px-3 py-1.5 text-sm text-slate-300 hover:border-slate-500 disabled:cursor-not-allowed disabled:opacity-50"
+          className={ui.btnSecondary}
         >
           Next
         </button>

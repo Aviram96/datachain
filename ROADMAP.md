@@ -243,7 +243,7 @@ Epics **1–10** above remain historical delivery notes for the original roadmap
 
 **Exit criteria**: Every story in `docs/CLIENT_PROGRAMMER_USER_STORIES.md` is Implemented, Deferred (with reason), or explicitly Declined; open decisions in that file are resolved.
 
-**Progress note**: Slice A complete 2026-07-21. Slice B complete 2026-07-21 — apply Alembic revision `20260721_000002` for `deleted_at` + unique active name.
+**Progress note**: Slice A complete 2026-07-21 (including landing refinement: toolbar-free home, problem/solution, signed-in → `/cameras`). Slice B complete 2026-07-21 — apply Alembic revision `20260721_000002` for `deleted_at` + unique active name.
 
 ---
 

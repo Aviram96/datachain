@@ -27,9 +27,9 @@ const DISMISS_MS = 5000;
 
 function toastStyles(variant: ToastVariant): string {
   if (variant === "error") {
-    return "border-red-500/40 bg-red-950/90 text-red-50";
+    return "border-landing-warn/40 bg-white text-landing-ink shadow-md";
   }
-  return "border-emerald-500/40 bg-emerald-950/90 text-emerald-50";
+  return "border-landing-accent/35 bg-white text-landing-ink shadow-md";
 }
 
 export function ToastProvider({ children }: { children: ReactNode }) {
@@ -67,8 +67,17 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           <div
             key={toast.id}
             role="alert"
-            className={`pointer-events-auto rounded-lg border px-4 py-3 text-sm shadow-lg ${toastStyles(toast.variant)}`}
+            className={`pointer-events-auto rounded-xl border px-4 py-3 text-sm ${toastStyles(toast.variant)}`}
           >
+            <span
+              className={`mb-1 block text-xs font-semibold uppercase tracking-wide ${
+                toast.variant === "error"
+                  ? "text-landing-warn"
+                  : "text-landing-accent"
+              }`}
+            >
+              {toast.variant === "error" ? "Error" : "Success"}
+            </span>
             {toast.message}
           </div>
         ))}

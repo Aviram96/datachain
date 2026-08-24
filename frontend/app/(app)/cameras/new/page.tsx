@@ -8,6 +8,7 @@ import { RequireAuth } from "@/components/require-auth";
 import { useToast } from "@/components/toast-provider";
 import { networkErrorMessage } from "@/lib/api";
 import { CamerasApiError, createCamera } from "@/lib/cameras-api";
+import { ui } from "@/lib/ui";
 
 export default function NewCameraPage() {
   const router = useRouter();
@@ -17,14 +18,11 @@ export default function NewCameraPage() {
     <RequireAuth>
       <div className="space-y-6">
         <div>
-          <Link
-            href="/cameras"
-            className="text-sm text-slate-400 hover:text-slate-200"
-          >
+          <Link href="/cameras" className={ui.backLink}>
             ← Cameras
           </Link>
-          <h1 className="mt-2 text-2xl font-semibold text-white">Add camera</h1>
-          <p className="mt-1 text-sm text-slate-400">
+          <h1 className={`mt-2 ${ui.pageTitle}`}>Add camera</h1>
+          <p className={`mt-1 ${ui.pageSubtitle}`}>
             Name, stream URL, and optional location are saved to your account.
           </p>
         </div>
