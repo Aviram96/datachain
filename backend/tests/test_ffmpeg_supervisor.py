@@ -61,6 +61,7 @@ def test_supervisor_does_not_restart_on_success() -> None:
 
     assert code == 0
     assert supervisor.restart_count == 0
+    assert supervisor.gave_up_after_restarts is False
     assert build_count["n"] == 1
 
 
@@ -79,3 +80,4 @@ def test_supervisor_respects_max_restarts() -> None:
 
     assert code == 1
     assert supervisor.restart_count == 2
+    assert supervisor.gave_up_after_restarts is True

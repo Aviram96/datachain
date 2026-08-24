@@ -23,6 +23,7 @@ from app.schemas.camera import (
     CameraStatus,
     CameraUpdate,
 )
+from app.services.camera_ingest import effective_camera_status
 from app.services.camera_probe import probe_many_statuses, probe_status
 
 router = APIRouter()
@@ -49,7 +50,7 @@ def _camera_public(camera: Camera, camera_status: CameraStatus) -> CameraPublic:
         stream_url=camera.stream_url,
         location=camera.location,
         created_at=camera.created_at,
-        status=camera_status,
+        status=effective_camera_status(camera, camera_status),
     )
 
 
@@ -212,11 +213,11 @@ def list_cameras(
         .all()
     )
     statuses = probe_many_statuses([camera.stream_url for camera in cameras])
-    matched = [
-        (camera, camera_status)
-        for camera, camera_status in zip(cameras, statuses, strict=True)
-        if camera_status == status_filter
-    ]
+    matched: list[tuple[Camera, CameraStatus]] = []
+    for camera, probed in zip(cameras, statuses, strict=True):
+        camera_status = effective_camera_status(camera, probed)
+        if camera_status == status_filter:
+            matched.append((camera, camera_status))
     total = len(matched)
     pages = max(1, math.ceil(total / page_size)) if total else 1
     offset = (page - 1) * page_size

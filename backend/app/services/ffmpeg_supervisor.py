@@ -28,6 +28,7 @@ class FFmpegRunConfig:
     restart_on_crash: bool = False
     restart_delay_seconds: float = DEFAULT_RESTART_DELAY_SECONDS
     max_restarts: int | None = None
+    log_label: str | None = None
     popen_kwargs: dict[str, Any] = field(default_factory=dict)
 
 
@@ -60,10 +61,21 @@ class FFmpegSupervisor:
         self._process: subprocess.Popen[bytes] | None = None
         self._stopped = False
         self._restart_count = 0
+        self._gave_up_after_restarts = False
 
     @property
     def restart_count(self) -> int:
         return self._restart_count
+
+    @property
+    def gave_up_after_restarts(self) -> bool:
+        """True when FFmpeg kept crashing and the restart cap was reached."""
+        return self._gave_up_after_restarts
+
+    def _label(self) -> str:
+        if self._config.log_label:
+            return f" [{self._config.log_label}]"
+        return ""
 
     def stop(self) -> None:
         if self._stopped:
@@ -114,19 +126,22 @@ class FFmpegSupervisor:
                     self._config.max_restarts is not None
                     and self._restart_count >= self._config.max_restarts
                 ):
+                    self._gave_up_after_restarts = True
                     logger.error(
-                        "FFmpeg crashed with code %s; max restarts (%s) exceeded",
+                        "FFmpeg crashed with code %s; max restarts (%s) exceeded%s",
                         last_code,
                         self._config.max_restarts,
+                        self._label(),
                     )
                     break
 
                 self._restart_count += 1
                 logger.warning(
-                    "FFmpeg crashed with code %s; restarting in %ss (attempt %s)",
+                    "FFmpeg crashed with code %s; restarting in %ss (attempt %s)%s",
                     last_code,
                     self._config.restart_delay_seconds,
                     self._restart_count,
+                    self._label(),
                 )
                 time.sleep(self._config.restart_delay_seconds)
             return last_code

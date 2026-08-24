@@ -45,5 +45,8 @@ class Camera(Base):
     deleted_at: Mapped[datetime | None] = mapped_column(
         sa.DateTime(timezone=True), nullable=True, index=True
     )
+    ingest_offline_at: Mapped[datetime | None] = mapped_column(
+        sa.DateTime(timezone=True), nullable=True
+    )
 
     owner: Mapped["User"] = relationship(back_populates="cameras")

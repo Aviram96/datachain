@@ -111,7 +111,12 @@ alembic downgrade -1
 
 ## Camera online/offline (Slice B / CP-B.P4)
 
-List and detail responses include a **`status`** field: `"online"` or `"offline"`. The API probes each camera’s **`stream_url`** on demand (not stored in the database):
+List and detail responses include a **`status`** field: `"online"` or `"offline"`. Status is **offline** if either:
+
+- the live **`stream_url` probe** fails (HTTP/HTTPS request or RTSP OPTIONS / TCP), or
+- camera ingest marked the camera down after FFmpeg hit its restart cap (`ingest_offline_at`; Slice C / CP-C.P8). A new ingest run clears that flag when it starts.
+
+Probe details (not stored in the database):
 
 - **HTTP/HTTPS:** short request to the stream URL (HEAD, then ranged GET). Any HTTP response (including 401/404) counts as **online**; network failures → **offline**.
 - **RTSP:** TCP connect to the RTSP port, then a minimal `OPTIONS` request when possible. An open RTSP port counts as reachable.
@@ -125,7 +130,7 @@ List and detail responses include a **`status`** field: `"online"` or `"offline"
 | ----- | ------- |
 | `page`, `page_size` | Pagination (default page size 10, max 50) |
 | `q` | Case-insensitive name search |
-| `status` | `online` or `offline` (live probe filter) |
+| `status` | `online` or `offline` (live probe **or** ingest restart-cap flag) |
 | `sort` | Default `created_at_desc` (newest first). Also `created_at_asc`, `name_asc`, `name_desc` |
 
 ### Soft delete and unique names
@@ -160,9 +165,11 @@ The process writes a continuous **MPEG-TS** stream to **stdout** (suitable for p
 
 **Note:** Use a short sample clip for testing; the file loops forever until you stop the script.
 
-## Camera stream ingest (Slice C / CP-C.P2–P7)
+## Camera stream ingest (Slice C / CP-C.P2–P8)
 
 Receive the **live `stream_url`** of a registered camera with FFmpeg (HTTP/HTTPS or RTSP) and split it into **1-minute `.mp4` segments** under `backend/temp/<camera-id>/`. Each file is named `{camera-uuid}_{YYYYMMDDTHHMMSS}Z.mp4` (camera ID + recording start). End time is start plus the segment duration (default 60s); parse with `app.services.segment_identity.parse_segment_path`. After a file is closed, a **basic integrity check** runs before later stages: complete MP4 (`ftyp` + `moov`), a video stream (ffprobe), and a SHA-256 fingerprint. Failed files stay in `temp/` and are not handed on. **Passing files stay under `temp/<camera-id>/` until processing succeeds.** Temp files are **deleted only after processing succeeds**; processing failures stay on disk and are retried. IPFS / chain / DB is still a stub, so this ingest path does not delete on staging-only success. Soft-deleted cameras are skipped.
+
+If FFmpeg exits unexpectedly, ingest **restarts it** (delay `CCTV_FFMPEG_RESTART_DELAY_SECONDS`, default 2s) up to **`CCTV_FFMPEG_MAX_RESTARTS` (default 10 for camera ingest)**. Each attempt is logged with the camera id. After the cap, ingest stops and sets **`ingest_offline_at`** so the camera shows **offline** on the dashboard even if the URL still answers a probe. A later ingest run clears that flag when it starts. Apply Alembic revision `20260824_000003`.
 
 From `backend/` with the venv activated, Postgres running, and migrations applied:
 
@@ -216,15 +223,15 @@ python scripts/process_temp_chunks.py
 
 The worker only deletes files matching `chunk_*.mp4` **inside** the configured temp directory (never arbitrary paths).
 
-## FFmpeg crash recovery (Epic 5, slice 4)
+## FFmpeg crash recovery (Epic 5, slice 4 / Slice C CP-C.P8)
 
-Continuous ingest (**feed simulator** and **`chunk_cctv_feed.py --loop`**) **restarts FFmpeg automatically** after a non-zero exit. One-pass chunking does not restart (normal end of file is exit 0).
+Continuous ingest **restarts FFmpeg automatically** after a non-zero exit. One-pass chunking does not restart (normal end of file is exit 0).
 
 - **Delay before restart:** `CCTV_FFMPEG_RESTART_DELAY_SECONDS` (default **2**)
-- **Cap retries:** optional `CCTV_FFMPEG_MAX_RESTARTS` (unset = unlimited until you press Ctrl+C)
+- **Cap retries:** `CCTV_FFMPEG_MAX_RESTARTS` — **camera ingest** defaults to **10**, then marks the camera offline. Feed simulator and `chunk_cctv_feed.py --loop` stay unlimited unless this env var is set.
 - **Stop:** Ctrl+C still terminates the current FFmpeg process and exits cleanly
 
-Implementation: `backend/app/services/ffmpeg_supervisor.py` (shared by feed simulator and loop chunker).
+Implementation: `backend/app/services/ffmpeg_supervisor.py` (shared by feed simulator, loop chunker, and `ingest_camera.py`).
 
 ## Tests
 

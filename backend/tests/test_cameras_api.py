@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from uuid import uuid4
+from datetime import datetime, timezone
+from uuid import UUID, uuid4
 
 import pytest
 from fastapi.testclient import TestClient
@@ -13,6 +14,7 @@ from sqlalchemy.pool import StaticPool
 from app.database import Base
 from app.deps import get_db
 from app.main import app
+from app.models.camera import Camera
 
 import app.models as _models  # noqa: F401
 
@@ -287,3 +289,42 @@ def test_list_search_sort_and_status_filter(client: TestClient) -> None:
     online = client.get("/cameras?status=online", headers=headers)
     assert online.status_code == 200
     assert online.json()["total"] == 0
+
+
+def test_ingest_offline_overrides_live_probe(
+    client: TestClient,
+    db_session: Session,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "app.routers.cameras.probe_status",
+        lambda _url: "online",
+    )
+    monkeypatch.setattr(
+        "app.routers.cameras.probe_many_statuses",
+        lambda urls: ["online"] * len(urls),
+    )
+    token = _register_and_token(client, "ingest-offline@example.com")
+    headers = _auth_headers(token)
+    created = client.post(
+        "/cameras",
+        headers=headers,
+        json={"name": "Gate", "stream_url": "rtsp://192.0.2.40/live"},
+    )
+    assert created.status_code == 201
+    camera_id = created.json()["id"]
+    assert created.json()["status"] == "online"
+
+    camera = db_session.get(Camera, UUID(camera_id))
+    assert camera is not None
+    camera.ingest_offline_at = datetime.now(timezone.utc)
+    db_session.commit()
+
+    detail = client.get(f"/cameras/{camera_id}", headers=headers)
+    assert detail.status_code == 200
+    assert detail.json()["status"] == "offline"
+
+    listed = client.get("/cameras?status=offline", headers=headers)
+    assert listed.status_code == 200
+    assert listed.json()["total"] == 1
+

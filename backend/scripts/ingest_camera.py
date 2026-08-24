@@ -3,6 +3,7 @@
 
 Segments are staged under temp/<camera-id>/ until processing succeeds.
 Temp files are deleted only after processing succeeds; failures stay for retry.
+Unexpected FFmpeg stops restart up to a cap; then the camera is marked offline.
 
 Run from backend/ with the venv activated and Postgres available:
 
@@ -45,7 +46,8 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         description=(
             "Receive camera streams, write 1-minute MP4 segments under temp/, "
             "and keep them staged until processing succeeds. "
-            "Temp files are deleted only after processing succeeds."
+            "Temp files are deleted only after processing succeeds. "
+            "Unexpected FFmpeg stops restart up to a cap, then the camera is marked offline."
         ),
     )
     target = parser.add_mutually_exclusive_group(required=True)
@@ -84,15 +86,17 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def _run_one(config: CameraIngestConfig) -> int:
-    return CameraIngest(config).run_until_signal()
+def _run_one(config: CameraIngestConfig, session_factory) -> int:
+    return CameraIngest(config, session_factory=session_factory).run_until_signal()
 
 
-def _run_all(configs: list[CameraIngestConfig]) -> int:
+def _run_all(configs: list[CameraIngestConfig], session_factory) -> int:
     if not configs:
         logging.error("No active cameras to ingest.")
         return 1
-    ingests = [CameraIngest(config) for config in configs]
+    ingests = [
+        CameraIngest(config, session_factory=session_factory) for config in configs
+    ]
     threads = [
         threading.Thread(
             target=ingest.run_until_signal,
@@ -153,8 +157,8 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         if one is not None:
-            return _run_one(one)
-        return _run_all(many or [])
+            return _run_one(one, SessionLocal)
+        return _run_all(many or [], SessionLocal)
     except FileNotFoundError:
         logging.error(
             "FFmpeg not found (%r). Install FFmpeg and ensure it is on PATH.",

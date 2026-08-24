@@ -149,14 +149,14 @@ _(Mostly invisible to the user; continuity and offline status after capture fail
 | CP-C.P5 | As the system, I want a basic integrity check on each segment before the next stage. | Implemented — `segment_integrity.py` (complete MP4 + SHA-256 + video stream); ingest worker gates next stage; failures stay in `temp/` and are not handed on |
 | CP-C.P6 | As the system, I want segments saved under `temp/` until processing succeeds. | Implemented — ingest stages under `temp/<camera-id>/` (`segment_staging.py`); worker `delete_on_success=False` until processing succeeds |
 | CP-C.P7 | As the system, I want to delete temp files only after successful processing, and keep files that failed or are awaiting retry. | Implemented — worker deletes only after processor success (`delete_after_successful_processing`); failures stay in `temp/` and processing failures are retried; ingest stub does not count as success |
-| CP-C.P8 | As the system, I want to detect unexpected FFmpeg / stream stop, restart with a capped attempt count, mark the camera offline after repeated failures, and log restart attempts. | TBD |
+| CP-C.P8 | As the system, I want to detect unexpected FFmpeg / stream stop, restart with a capped attempt count, mark the camera offline after repeated failures, and log restart attempts. | Implemented — ingest restarts FFmpeg (default cap 10); logs include camera id; `ingest_offline_at` after cap; dashboard `status` offline |
 
 
 ### Slice C notes
 
 - **CP-C.P1** uses the existing local-file simulator as the Slice C hardware-free entry point (not live RTSP). Run from `backend/`: `python scripts/simulate_cctv_feed.py --source path/to/sample.mp4` (or `CCTV_SOURCE_MP4`). See `backend/README.md`.
-- **CP-C.P2–P7** attach FFmpeg to each active camera’s `stream_url` and split it into 1-minute `.mp4` files named `{camera_id}_{start}Z.mp4` under `backend/temp/<camera-id>/`. Each closed file is integrity-checked (complete MP4, video stream, SHA-256) before later processing; failures stay in `temp/` and are not handed on. Passing files **remain staged under `temp/` until processing succeeds**. Temp files are **deleted only after processing succeeds**; processing failures stay on disk and are retried. IPFS / chain / DB is still a stub, so camera ingest does not delete on staging-only success. Run from `backend/`: `python scripts/ingest_camera.py --camera-id UUID` or `--all`. Parse start/end with `app.services.segment_identity.parse_segment_path`.
-- Remaining Slice C stories (P8, C1) are still TBD.
+- **CP-C.P2–P8** attach FFmpeg to each active camera’s `stream_url` and split it into 1-minute `.mp4` files named `{camera_id}_{start}Z.mp4` under `backend/temp/<camera-id>/`. Each closed file is integrity-checked (complete MP4, video stream, SHA-256) before later processing; failures stay in `temp/` and are not handed on. Passing files **remain staged under `temp/` until processing succeeds**. Temp files are **deleted only after processing succeeds**; processing failures stay on disk and are retried. If FFmpeg stops unexpectedly, ingest **restarts** it (default cap 10, logged with camera id) and **marks the camera offline** after the cap (`ingest_offline_at`; apply Alembic `20260824_000003`). IPFS / chain / DB is still a stub, so camera ingest does not delete on staging-only success. Run from `backend/`: `python scripts/ingest_camera.py --camera-id UUID` or `--all`. Parse start/end with `app.services.segment_identity.parse_segment_path`.
+- Remaining Slice C stories (C1) are still TBD.
 
 
 ---
@@ -277,3 +277,4 @@ Add here only if the teacher requires them in the client–programmer pack.
 | 2026-08-24 | Slice C CP-C.P5 Implemented: basic integrity check (complete MP4, SHA-256, video stream) before the next stage. |
 | 2026-08-24 | Slice C CP-C.P6 Implemented: camera ingest stages segments under `temp/<camera-id>/` until processing succeeds. |
 | 2026-08-24 | Slice C CP-C.P7 Implemented: delete temp files only after processing succeeds; keep failures for retry. |
+| 2026-08-24 | Slice C CP-C.P8 Implemented: capped FFmpeg restart on unexpected stop; mark camera offline after the cap. |
