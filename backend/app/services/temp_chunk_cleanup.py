@@ -47,6 +47,15 @@ def delete_chunk(
     logger.info("Deleted processed chunk %s", path.name)
 
 
+def delete_after_successful_processing(
+    path: Path,
+    temp_dir: Path,
+    pattern: str = DEFAULT_SEGMENT_PATTERN,
+) -> None:
+    """Remove a temp segment only after processing succeeded (CP-C.P7)."""
+    delete_chunk(path, temp_dir, pattern)
+
+
 def delete_chunks(
     paths: list[Path],
     temp_dir: Path,

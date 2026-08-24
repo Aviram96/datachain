@@ -238,9 +238,9 @@ Readable explanations of what we use and why—suitable for non-specialists and 
 
 **What it is:** A **background worker** watches the **`temp/`** folder for new video chunk files. When processing succeeds (upload and database write in production), it **deletes that file** so old segments do not fill the disk.
 
-**Why Datachain uses it:** Chunks are **temporary staging** until IPFS and the chain record exist. Automatic cleanup keeps laptops and servers healthy during long-running CCTV ingest. Camera ingest (Slice C) keeps those staged files in `temp/` until processing succeeds; the Epic 5 file-chunk path still deletes on stub success.
+**Why Datachain uses it:** Chunks are **temporary staging** until IPFS and the chain record exist. Automatic cleanup keeps laptops and servers healthy during long-running CCTV ingest. Camera ingest (Slice C) keeps staged files in `temp/` until processing succeeds, then deletes them; failed files stay for retry. The Epic 5 file-chunk path still deletes on stub success.
 
-**Where it shows up:** `backend/app/services/chunk_processing_worker.py`, `backend/app/services/temp_chunk_cleanup.py`, `backend/app/services/segment_staging.py` (ingest keep-until-success), `--cleanup-after-success` on `chunk_cctv_feed.py`, and `scripts/process_temp_chunks.py`. Epic 6 / Slice D swaps the **stub processor** for real Pinata/Web3 steps.
+**Where it shows up:** `backend/app/services/chunk_processing_worker.py`, `backend/app/services/temp_chunk_cleanup.py` (`delete_after_successful_processing`), `backend/app/services/segment_staging.py` (ingest keep-until-success), `--cleanup-after-success` on `chunk_cctv_feed.py`, and `scripts/process_temp_chunks.py`. Epic 6 / Slice D swaps the **stub processor** for real Pinata/Web3 steps.
 
 ### Development mocks for IPFS and blockchain (Epic 6, planned)
 

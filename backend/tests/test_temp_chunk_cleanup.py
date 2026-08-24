@@ -8,6 +8,7 @@ import pytest
 
 from app.services.temp_chunk_cleanup import (
     TempChunkCleanupError,
+    delete_after_successful_processing,
     delete_chunk,
     delete_chunks,
     is_managed_chunk_path,
@@ -48,3 +49,10 @@ def test_delete_chunks_count(tmp_path: Path) -> None:
     assert delete_chunks([a, b], tmp_path) == 2
     assert not a.exists()
     assert not b.exists()
+
+
+def test_delete_after_successful_processing_removes_file(tmp_path: Path) -> None:
+    chunk = tmp_path / "chunk_000.mp4"
+    chunk.write_bytes(b"\x00")
+    delete_after_successful_processing(chunk, tmp_path)
+    assert not chunk.exists()

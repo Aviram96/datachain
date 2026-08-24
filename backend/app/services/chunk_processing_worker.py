@@ -10,7 +10,10 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from app.services.segment_integrity import SegmentIntegrityResult
-from app.services.temp_chunk_cleanup import TempChunkCleanupError, delete_chunk
+from app.services.temp_chunk_cleanup import (
+    TempChunkCleanupError,
+    delete_after_successful_processing,
+)
 from app.services.video_chunker import DEFAULT_SEGMENT_PATTERN, list_chunk_files
 
 logger = logging.getLogger(__name__)
@@ -41,10 +44,9 @@ class ChunkProcessingWorkerConfig:
 class ChunkProcessingWorker:
     """Poll temp/ for new chunk files; optionally integrity-check, then process.
 
-    When ``delete_on_success`` is true (Epic 5 file-chunk cleanup), successful
-    processing removes the file. Camera ingest uses the staging config
-    (``delete_on_success=False``) so segments stay under temp/ until later
-    processing succeeds (CP-C.P6). Deletion after success is CP-C.P7.
+    CP-C.P7: delete a temp file only after the processor returns True and
+    ``delete_on_success`` is set. Processor failures leave the file in place
+    for retry. Integrity failures stay in temp/ and are not handed on (CP-C.P5).
     """
 
     def __init__(self, config: ChunkProcessingWorkerConfig) -> None:
@@ -52,6 +54,7 @@ class ChunkProcessingWorker:
         self._stop_event = threading.Event()
         self._thread: threading.Thread | None = None
         self._handled: set[Path] = set()
+        self._awaiting_retry: set[Path] = set()
         self._lock = threading.Lock()
 
     def start(self) -> None:
@@ -119,11 +122,20 @@ class ChunkProcessingWorker:
                     result.size_bytes,
                 )
             if not self._config.processor(path):
-                logger.warning("Processing failed; keeping chunk %s", path.name)
+                with self._lock:
+                    first_retry = path not in self._awaiting_retry
+                    self._awaiting_retry.add(path)
+                if first_retry:
+                    logger.warning(
+                        "Processing did not succeed; keeping %s for retry",
+                        path.name,
+                    )
+                else:
+                    logger.debug("Retrying staged segment %s", path.name)
                 continue
             if self._config.delete_on_success:
                 try:
-                    delete_chunk(
+                    delete_after_successful_processing(
                         path,
                         self._config.temp_dir,
                         self._config.segment_pattern,
@@ -134,6 +146,7 @@ class ChunkProcessingWorker:
                     continue
             with self._lock:
                 self._handled.add(path)
+                self._awaiting_retry.discard(path)
         return deleted
 
 

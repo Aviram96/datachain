@@ -2,6 +2,7 @@
 """CLI: receive registered camera streams and write 1-minute MP4 segments.
 
 Segments are staged under temp/<camera-id>/ until processing succeeds.
+Temp files are deleted only after processing succeeds; failures stay for retry.
 
 Run from backend/ with the venv activated and Postgres available:
 
@@ -43,7 +44,8 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
             "Receive camera streams, write 1-minute MP4 segments under temp/, "
-            "and keep them staged until processing succeeds."
+            "and keep them staged until processing succeeds. "
+            "Temp files are deleted only after processing succeeds."
         ),
     )
     target = parser.add_mutually_exclusive_group(required=True)

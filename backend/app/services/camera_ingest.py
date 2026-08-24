@@ -3,7 +3,8 @@
 Slice C / CP-C.P2 attaches the camera URL; CP-C.P3 writes fixed-duration chunks;
 CP-C.P4 names each file from camera ID and recording time; CP-C.P5 checks
 integrity on each closed segment before the next stage; CP-C.P6 keeps those
-files under temp/ until processing succeeds.
+files under temp/ until processing succeeds; CP-C.P7 deletes a temp file only
+after processing succeeds and keeps failures for retry.
 """
 
 from __future__ import annotations

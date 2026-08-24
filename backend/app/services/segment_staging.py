@@ -1,9 +1,10 @@
 """Stage camera ingest segments under temp/ until processing succeeds (CP-C.P6).
 
 FFmpeg writes each closed ``{camera_id}_{start}Z.mp4`` into
-``temp/<camera-id>/``. The ingest worker leaves those files there through
-integrity (CP-C.P5) and the current processing stub. IPFS / chain / DB
-success is Slice D; deleting after success is CP-C.P7.
+``temp/<camera-id>/``. Files stay there through integrity (CP-C.P5). The
+ingest processor is still a stub (IPFS / chain / DB is Slice D), so
+``delete_on_success=False``: CP-C.P7 deletes a temp file only after
+processing reports success, and keeps failures for retry.
 """
 
 from __future__ import annotations
@@ -45,7 +46,8 @@ def keep_staged_until_processing_succeeds(path: Path) -> bool:
     """Processor: staging succeeded; later pipeline steps have not run yet.
 
     Returns True so the worker records the file as handled without treating
-    IPFS / chain / DB as done. Ingest sets ``delete_on_success=False``.
+    IPFS / chain / DB as done. Ingest sets ``delete_on_success=False`` so the
+    file is not deleted until processing actually succeeds (CP-C.P7).
     """
     logger.info("Staged under temp/ until processing succeeds: %s", path.name)
     return True
@@ -59,7 +61,12 @@ def staging_worker_config(
     poll_interval_seconds: float = 1.0,
     stable_delay_seconds: float = 0.5,
 ) -> ChunkProcessingWorkerConfig:
-    """Ingest worker: keep passing segments in temp/ until processing succeeds."""
+    """Ingest worker: keep passing segments in temp/ until processing succeeds.
+
+    ``delete_on_success=False`` is the CP-C.P7 policy for this stub: do not
+    delete on staging-only success. A future Slice D processor that returns
+    True should run with ``delete_on_success=True``.
+    """
     return ChunkProcessingWorkerConfig(
         temp_dir=temp_dir,
         poll_interval_seconds=poll_interval_seconds,
