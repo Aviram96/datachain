@@ -1,7 +1,8 @@
 """Receive a registered camera stream and split it into 1-minute MP4 segments.
 
 Slice C / CP-C.P2 attaches the camera URL; CP-C.P3 writes fixed-duration chunks;
-CP-C.P4 names each file from camera ID and recording time.
+CP-C.P4 names each file from camera ID and recording time; CP-C.P5 checks
+integrity on each closed segment before the next stage.
 """
 
 from __future__ import annotations
@@ -25,7 +26,18 @@ from app.services.ffmpeg_supervisor import (
     resolve_max_restarts,
     resolve_restart_delay_seconds,
 )
+from app.services.chunk_processing_worker import (
+    ChunkProcessingWorker,
+    ChunkProcessingWorkerConfig,
+)
 from app.services.segment_identity import camera_segment_pattern
+from app.services.segment_integrity import (
+    SegmentIntegrityResult,
+    check_segment,
+    ffprobe_executable_for,
+    file_has_video_stream,
+    hold_segment_for_next_stage,
+)
 from app.services.video_chunker import (
     DEFAULT_CHUNK_DURATION_SECONDS,
     VideoChunkerConfig,
@@ -76,6 +88,32 @@ def chunker_config_for_ingest(config: CameraIngestConfig) -> VideoChunkerConfig:
 def build_ffmpeg_receive_command(config: CameraIngestConfig) -> list[str]:
     """Build FFmpeg args: live camera URL into 1-minute MP4 segments."""
     return build_ffmpeg_chunk_command(chunker_config_for_ingest(config))
+
+
+def integrity_worker_config_for_ingest(
+    config: CameraIngestConfig,
+) -> ChunkProcessingWorkerConfig:
+    """Worker that integrity-checks closed segments and holds them in temp/."""
+    chunk = chunker_config_for_ingest(config)
+    ffprobe = ffprobe_executable_for(config.ffmpeg_executable)
+
+    def _check(path: Path) -> SegmentIntegrityResult:
+        return check_segment(
+            path,
+            duration_seconds=config.segment_duration_seconds,
+            require_identity=True,
+            probe_video=lambda candidate: file_has_video_stream(
+                candidate, ffprobe_executable=ffprobe
+            ),
+        )
+
+    return ChunkProcessingWorkerConfig(
+        temp_dir=chunk.temp_dir,
+        segment_pattern=chunk.segment_pattern,
+        processor=hold_segment_for_next_stage,
+        delete_on_success=False,
+        integrity_check=_check,
+    )
 
 
 def ingest_config_for_camera(
@@ -163,4 +201,9 @@ class CameraIngest:
             max_restarts=resolve_max_restarts(),
         )
         self._supervisor = FFmpegSupervisor(run_config)
-        return self._supervisor.run_until_signal()
+        worker = ChunkProcessingWorker(integrity_worker_config_for_ingest(self._config))
+        worker.start()
+        try:
+            return self._supervisor.run_until_signal()
+        finally:
+            worker.stop(flush=True)

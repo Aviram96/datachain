@@ -9,12 +9,14 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from app.services.segment_integrity import SegmentIntegrityResult
 from app.services.temp_chunk_cleanup import TempChunkCleanupError, delete_chunk
 from app.services.video_chunker import DEFAULT_SEGMENT_PATTERN, list_chunk_files
 
 logger = logging.getLogger(__name__)
 
 ChunkProcessor = Callable[[Path], bool]
+IntegrityCheck = Callable[[Path], SegmentIntegrityResult]
 
 
 def stub_chunk_processor(path: Path) -> bool:
@@ -32,10 +34,17 @@ class ChunkProcessingWorkerConfig:
     stable_delay_seconds: float = 0.5
     segment_pattern: str = DEFAULT_SEGMENT_PATTERN
     processor: ChunkProcessor = field(default=stub_chunk_processor)
+    delete_on_success: bool = True
+    integrity_check: IntegrityCheck | None = None
 
 
 class ChunkProcessingWorker:
-    """Poll temp/ for new chunk files; delete each file after successful processing."""
+    """Poll temp/ for new chunk files; optionally integrity-check, then process.
+
+    When ``delete_on_success`` is true (Epic 5 cleanup), successful processing
+    removes the file. Camera ingest sets it false so checked segments stay in
+    temp/ for later stages.
+    """
 
     def __init__(self, config: ChunkProcessingWorkerConfig) -> None:
         self._config = config
@@ -78,6 +87,8 @@ class ChunkProcessingWorker:
 
     def _scan_once(self, *, final_pass: bool) -> int:
         deleted = 0
+        if not self._config.temp_dir.is_dir():
+            return 0
         for path in list_chunk_files(self._config.temp_dir, self._config.segment_pattern):
             with self._lock:
                 if path in self._handled:
@@ -87,7 +98,27 @@ class ChunkProcessingWorker:
                 self._config.stable_delay_seconds,
             ):
                 continue
-            if self._config.processor(path):
+            if self._config.integrity_check is not None:
+                result = self._config.integrity_check(path)
+                if not result.ok:
+                    logger.error(
+                        "Segment integrity failed for %s: %s",
+                        path.name,
+                        result.error,
+                    )
+                    with self._lock:
+                        self._handled.add(path)
+                    continue
+                logger.info(
+                    "Segment integrity ok %s sha256=%s bytes=%s",
+                    path.name,
+                    result.sha256,
+                    result.size_bytes,
+                )
+            if not self._config.processor(path):
+                logger.warning("Processing failed; keeping chunk %s", path.name)
+                continue
+            if self._config.delete_on_success:
                 try:
                     delete_chunk(
                         path,
@@ -95,12 +126,11 @@ class ChunkProcessingWorker:
                         self._config.segment_pattern,
                     )
                     deleted += 1
-                    with self._lock:
-                        self._handled.add(path)
                 except TempChunkCleanupError as exc:
                     logger.error("%s", exc)
-            else:
-                logger.warning("Processing failed; keeping chunk %s", path.name)
+                    continue
+            with self._lock:
+                self._handled.add(path)
         return deleted
 
 

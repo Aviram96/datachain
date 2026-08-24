@@ -216,7 +216,15 @@ Readable explanations of what we use and why—suitable for non-specialists and 
 
 **Why Datachain uses it:** CCTV ingest needs **fixed-duration chunks** (about one minute) for IPFS uploads and chain anchors. FFmpeg is the standard way to turn a continuous feed (real RTSP or a **looped sample MP4**) into those segments without storing one giant file in the API process.
 
-**Where it shows up:** Epic 5 starts with `backend/scripts/simulate_cctv_feed.py` and `backend/app/services/cctv_feed_simulator.py` (loop a local `.mp4` at real-time pace to stdout). **Slice C / CP-C.P2–P3** receive each registered camera URL via `backend/scripts/ingest_camera.py` and write **1-minute** `.mp4` files under `backend/temp/<camera-id>/` using `backend/app/services/video_chunker.py`. **`backend/scripts/chunk_cctv_feed.py`** can still chunk a local file the same way. **`backend/app/services/ffmpeg_supervisor.py`** restarts FFmpeg after crashes during continuous ingest. Install FFmpeg on the host; see `backend/README.md`.
+**Where it shows up:** Epic 5 starts with `backend/scripts/simulate_cctv_feed.py` and `backend/app/services/cctv_feed_simulator.py` (loop a local `.mp4` at real-time pace to stdout). **Slice C / CP-C.P2–P5** receive each registered camera URL via `backend/scripts/ingest_camera.py` and write **1-minute** `.mp4` files under `backend/temp/<camera-id>/` using `backend/app/services/video_chunker.py`. Closed segments are checked with **ffprobe** (a companion tool in the FFmpeg install) plus a SHA-256 fingerprint in `backend/app/services/segment_integrity.py` before later stages. **`backend/scripts/chunk_cctv_feed.py`** can still chunk a local file the same way. **`backend/app/services/ffmpeg_supervisor.py`** restarts FFmpeg after crashes during continuous ingest. Install FFmpeg on the host; see `backend/README.md`.
+
+### SHA-256 (segment fingerprint)
+
+**What it is:** **SHA-256** is a **cryptographic hash**: a short fingerprint of a file’s bytes. Changing even one bit produces a different fingerprint.
+
+**Why Datachain uses it:** Before a one-minute clip is uploaded or anchored, the pipeline records a SHA-256 so later stages (and verification) can tell if that file was altered.
+
+**Where it shows up:** `backend/app/services/segment_integrity.py` (Slice C / CP-C.P5). Storing that hash in PostgreSQL and on-chain is Slice D.
 
 ### Simulated CCTV feed (development)
 

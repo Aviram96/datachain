@@ -160,9 +160,9 @@ The process writes a continuous **MPEG-TS** stream to **stdout** (suitable for p
 
 **Note:** Use a short sample clip for testing; the file loops forever until you stop the script.
 
-## Camera stream ingest (Slice C / CP-C.P2–P4)
+## Camera stream ingest (Slice C / CP-C.P2–P5)
 
-Receive the **live `stream_url`** of a registered camera with FFmpeg (HTTP/HTTPS or RTSP) and split it into **1-minute `.mp4` segments** under `backend/temp/<camera-id>/`. Each file is named `{camera-uuid}_{YYYYMMDDTHHMMSS}Z.mp4` (camera ID + recording start). End time is start plus the segment duration (default 60s); parse with `app.services.segment_identity.parse_segment_path`. Soft-deleted cameras are skipped.
+Receive the **live `stream_url`** of a registered camera with FFmpeg (HTTP/HTTPS or RTSP) and split it into **1-minute `.mp4` segments** under `backend/temp/<camera-id>/`. Each file is named `{camera-uuid}_{YYYYMMDDTHHMMSS}Z.mp4` (camera ID + recording start). End time is start plus the segment duration (default 60s); parse with `app.services.segment_identity.parse_segment_path`. After a file is closed, a **basic integrity check** runs before later stages: complete MP4 (`ftyp` + `moov`), a video stream (ffprobe), and a SHA-256 fingerprint. Failed files stay in `temp/` and are not handed on. Soft-deleted cameras are skipped.
 
 From `backend/` with the venv activated, Postgres running, and migrations applied:
 
