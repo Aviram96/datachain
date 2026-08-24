@@ -11,6 +11,7 @@ from app.services.video_chunker import (
     VideoChunkerError,
     build_ffmpeg_chunk_command,
     ensure_temp_dir,
+    ffmpeg_input,
     list_chunk_files,
     resolve_chunk_duration_seconds,
     resolve_temp_dir,
@@ -72,6 +73,36 @@ def test_build_ffmpeg_chunk_command_loop(tmp_path: Path) -> None:
     assert "-re" in cmd
     assert "-stream_loop" in cmd
     assert cmd[cmd.index("-stream_loop") + 1] == "-1"
+
+
+def test_build_ffmpeg_chunk_command_live_url(tmp_path: Path) -> None:
+    config = VideoChunkerConfig(
+        source_path=tmp_path / "unused.mp4",
+        temp_dir=tmp_path / "temp",
+        input_uri="rtsp://192.0.2.50/live",
+        extra_input_args=("-rtsp_transport", "tcp"),
+        restart_on_crash=True,
+    )
+    cmd = build_ffmpeg_chunk_command(config)
+    assert ffmpeg_input(config) == "rtsp://192.0.2.50/live"
+    assert cmd[cmd.index("-i") + 1] == "rtsp://192.0.2.50/live"
+    assert "-rtsp_transport" in cmd
+    assert "-stream_loop" not in cmd
+    assert cmd[cmd.index("-segment_time") + 1] == "60"
+
+
+def test_build_ffmpeg_chunk_command_strftime(tmp_path: Path) -> None:
+    pattern = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee_%Y%m%dT%H%M%SZ.mp4"
+    config = VideoChunkerConfig(
+        source_path=tmp_path / "cam.mp4",
+        temp_dir=tmp_path / "temp",
+        segment_pattern=pattern,
+        strftime_output=True,
+    )
+    cmd = build_ffmpeg_chunk_command(config)
+    assert "-strftime" in cmd
+    assert cmd[cmd.index("-strftime") + 1] == "1"
+    assert str(segment_output_path(config)).endswith(pattern)
 
 
 def test_ensure_temp_dir_creates(tmp_path: Path) -> None:

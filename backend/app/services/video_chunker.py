@@ -45,6 +45,10 @@ class VideoChunkerConfig:
     ffmpeg_executable: str = DEFAULT_FFMPEG
     loop_source: bool = False
     segment_pattern: str = DEFAULT_SEGMENT_PATTERN
+    input_uri: str | None = None
+    extra_input_args: tuple[str, ...] = ()
+    restart_on_crash: bool | None = None
+    strftime_output: bool = False
 
 
 def resolve_temp_dir(cli_path: str | None = None) -> Path:
@@ -87,6 +91,13 @@ def segment_output_path(config: VideoChunkerConfig) -> Path:
     return config.temp_dir / config.segment_pattern
 
 
+def ffmpeg_input(config: VideoChunkerConfig) -> str:
+    """Return the FFmpeg ``-i`` value: live URL when set, otherwise the file path."""
+    if config.input_uri and config.input_uri.strip():
+        return config.input_uri.strip()
+    return str(config.source_path)
+
+
 def build_ffmpeg_chunk_command(config: VideoChunkerConfig) -> list[str]:
     """Build FFmpeg args: segment muxer, MP4 chunks of fixed duration."""
     cmd = [
@@ -95,12 +106,14 @@ def build_ffmpeg_chunk_command(config: VideoChunkerConfig) -> list[str]:
         "-loglevel",
         "warning",
     ]
+    if config.extra_input_args:
+        cmd.extend(config.extra_input_args)
     if config.loop_source:
         cmd.extend(["-re", "-stream_loop", "-1"])
     cmd.extend(
         [
             "-i",
-            str(config.source_path),
+            ffmpeg_input(config),
             "-c",
             "copy",
             "-f",
@@ -111,9 +124,11 @@ def build_ffmpeg_chunk_command(config: VideoChunkerConfig) -> list[str]:
             "1",
             "-segment_format",
             "mp4",
-            str(segment_output_path(config)),
         ]
     )
+    if config.strftime_output:
+        cmd.extend(["-strftime", "1"])
+    cmd.append(str(segment_output_path(config)))
     return cmd
 
 
@@ -139,14 +154,22 @@ class VideoChunker:
         self,
         worker: ChunkProcessingWorker | None = None,
     ) -> int:
-        """Start chunker; restart FFmpeg on crash when --loop is enabled."""
-        validate_source_mp4(self._config.source_path)
+        """Start chunker; restart FFmpeg on crash when looping or live ingest."""
+        if not self._config.input_uri:
+            validate_source_mp4(self._config.source_path)
         ensure_temp_dir(self._config.temp_dir)
+        restart_on_crash = (
+            self._config.restart_on_crash
+            if self._config.restart_on_crash is not None
+            else self._config.loop_source
+        )
         mode = "looping" if self._config.loop_source else "one pass"
-        restart_note = "auto-restart on crash" if self._config.loop_source else "no restart"
+        if self._config.input_uri:
+            mode = "live stream"
+        restart_note = "auto-restart on crash" if restart_on_crash else "no restart"
         logger.info(
             "Chunking %s into %ss segments under %s (%s; %s; Ctrl+C to stop)",
-            self._config.source_path,
+            ffmpeg_input(self._config),
             self._config.segment_duration_seconds,
             self._config.temp_dir,
             mode,
@@ -154,7 +177,7 @@ class VideoChunker:
         )
         run_config = FFmpegRunConfig(
             build_command=lambda: build_ffmpeg_chunk_command(self._config),
-            restart_on_crash=self._config.loop_source,
+            restart_on_crash=restart_on_crash,
             restart_delay_seconds=resolve_restart_delay_seconds(),
             max_restarts=resolve_max_restarts(),
         )

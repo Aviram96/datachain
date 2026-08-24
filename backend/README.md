@@ -160,21 +160,21 @@ The process writes a continuous **MPEG-TS** stream to **stdout** (suitable for p
 
 **Note:** Use a short sample clip for testing; the file loops forever until you stop the script.
 
-## Camera stream ingest (Slice C / CP-C.P2)
+## Camera stream ingest (Slice C / CP-C.P2–P4)
 
-Receive the **live `stream_url`** of a registered camera with FFmpeg (HTTP/HTTPS or RTSP). This keeps the stream attached continuously so later Slice C steps can chunk it. Soft-deleted cameras are skipped.
+Receive the **live `stream_url`** of a registered camera with FFmpeg (HTTP/HTTPS or RTSP) and split it into **1-minute `.mp4` segments** under `backend/temp/<camera-id>/`. Each file is named `{camera-uuid}_{YYYYMMDDTHHMMSS}Z.mp4` (camera ID + recording start). End time is start plus the segment duration (default 60s); parse with `app.services.segment_identity.parse_segment_path`. Soft-deleted cameras are skipped.
 
 From `backend/` with the venv activated, Postgres running, and migrations applied:
 
 ```powershell
-# One camera (writes MPEG-TS to stdout; pipe into a later chunking step)
+# One camera
 python scripts/ingest_camera.py --camera-id 00000000-0000-0000-0000-000000000001
 
 # Every active camera (one FFmpeg process per camera)
 python scripts/ingest_camera.py --all
 ```
 
-Ctrl+C stops ingest. RTSP uses TCP transport. Requires FFmpeg on `PATH`.
+Ctrl+C stops ingest. RTSP uses TCP transport. Requires FFmpeg on `PATH`. Optional `--temp-dir` and `--duration` (default 60 seconds).
 
 ## Video chunking (Epic 5, slice 2)
 

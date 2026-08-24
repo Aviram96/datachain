@@ -216,7 +216,7 @@ Readable explanations of what we use and why—suitable for non-specialists and 
 
 **Why Datachain uses it:** CCTV ingest needs **fixed-duration chunks** (about one minute) for IPFS uploads and chain anchors. FFmpeg is the standard way to turn a continuous feed (real RTSP or a **looped sample MP4**) into those segments without storing one giant file in the API process.
 
-**Where it shows up:** Epic 5 starts with `backend/scripts/simulate_cctv_feed.py` and `backend/app/services/cctv_feed_simulator.py` (loop a local `.mp4` at real-time pace to stdout). **Slice C / CP-C.P2** receives each registered camera URL via `backend/scripts/ingest_camera.py` and `backend/app/services/camera_ingest.py`. **`backend/scripts/chunk_cctv_feed.py`** and **`backend/app/services/video_chunker.py`** write **1-minute** `.mp4` files under **`backend/temp/`**. **`backend/app/services/ffmpeg_supervisor.py`** restarts FFmpeg after crashes during continuous ingest. Install FFmpeg on the host; see `backend/README.md`.
+**Where it shows up:** Epic 5 starts with `backend/scripts/simulate_cctv_feed.py` and `backend/app/services/cctv_feed_simulator.py` (loop a local `.mp4` at real-time pace to stdout). **Slice C / CP-C.P2–P3** receive each registered camera URL via `backend/scripts/ingest_camera.py` and write **1-minute** `.mp4` files under `backend/temp/<camera-id>/` using `backend/app/services/video_chunker.py`. **`backend/scripts/chunk_cctv_feed.py`** can still chunk a local file the same way. **`backend/app/services/ffmpeg_supervisor.py`** restarts FFmpeg after crashes during continuous ingest. Install FFmpeg on the host; see `backend/README.md`.
 
 ### Simulated CCTV feed (development)
 

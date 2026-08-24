@@ -1,16 +1,14 @@
-"""Receive a registered camera's live stream via FFmpeg (Slice C / CP-C.P2).
+"""Receive a registered camera stream and split it into 1-minute MP4 segments.
 
-Chunking, unique segment names, and capture-offline handling are later Slice C
-stories. This module keeps FFmpeg attached to ``stream_url`` so footage can be
-processed continuously.
+Slice C / CP-C.P2 attaches the camera URL; CP-C.P3 writes fixed-duration chunks;
+CP-C.P4 names each file from camera ID and recording time.
 """
 
 from __future__ import annotations
 
 import logging
-import subprocess
-import sys
 from dataclasses import dataclass
+from pathlib import Path
 from uuid import UUID
 
 from sqlalchemy.orm import Session
@@ -27,42 +25,57 @@ from app.services.ffmpeg_supervisor import (
     resolve_max_restarts,
     resolve_restart_delay_seconds,
 )
+from app.services.segment_identity import camera_segment_pattern
+from app.services.video_chunker import (
+    DEFAULT_CHUNK_DURATION_SECONDS,
+    VideoChunkerConfig,
+    build_ffmpeg_chunk_command,
+    ensure_temp_dir,
+    resolve_chunk_duration_seconds,
+    resolve_temp_dir,
+)
 
 logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
 class CameraIngestConfig:
-    """Settings for receiving one camera stream."""
+    """Settings for receiving and chunking one camera stream."""
 
     camera_id: UUID
     stream_url: str
     ffmpeg_executable: str = DEFAULT_FFMPEG
-    write_stdout: bool = True
+    temp_dir: Path | None = None
+    segment_duration_seconds: int = DEFAULT_CHUNK_DURATION_SECONDS
+
+
+def camera_chunk_dir(camera_id: UUID, base: Path | None = None) -> Path:
+    """Per-camera folder under temp/ so concurrent ingest does not collide."""
+    root = base.resolve() if base is not None else resolve_temp_dir()
+    return (root / str(camera_id)).resolve()
+
+
+def chunker_config_for_ingest(config: CameraIngestConfig) -> VideoChunkerConfig:
+    """Map ingest settings to the shared FFmpeg segment muxer config."""
+    extra: tuple[str, ...] = ()
+    if config.stream_url.lower().startswith("rtsp://"):
+        extra = ("-rtsp_transport", "tcp")
+    return VideoChunkerConfig(
+        source_path=Path("."),
+        temp_dir=camera_chunk_dir(config.camera_id, config.temp_dir),
+        segment_duration_seconds=config.segment_duration_seconds,
+        ffmpeg_executable=config.ffmpeg_executable,
+        input_uri=config.stream_url,
+        extra_input_args=extra,
+        restart_on_crash=True,
+        segment_pattern=camera_segment_pattern(config.camera_id),
+        strftime_output=True,
+    )
 
 
 def build_ffmpeg_receive_command(config: CameraIngestConfig) -> list[str]:
-    """Build FFmpeg args: copy the live camera URL to MPEG-TS on stdout."""
-    cmd = [
-        config.ffmpeg_executable,
-        "-hide_banner",
-        "-loglevel",
-        "warning",
-    ]
-    if config.stream_url.lower().startswith("rtsp://"):
-        cmd.extend(["-rtsp_transport", "tcp"])
-    cmd.extend(
-        [
-            "-i",
-            config.stream_url,
-            "-c",
-            "copy",
-            "-f",
-            "mpegts",
-            "pipe:1",
-        ]
-    )
-    return cmd
+    """Build FFmpeg args: live camera URL into 1-minute MP4 segments."""
+    return build_ffmpeg_chunk_command(chunker_config_for_ingest(config))
 
 
 def ingest_config_for_camera(
@@ -70,7 +83,8 @@ def ingest_config_for_camera(
     camera_id: UUID,
     *,
     ffmpeg_executable: str = DEFAULT_FFMPEG,
-    write_stdout: bool = True,
+    temp_dir: Path | None = None,
+    segment_duration_seconds: int | None = None,
 ) -> CameraIngestConfig:
     """Attach an active camera and return ingest settings for its stream URL."""
     camera = get_active_camera(db, camera_id)
@@ -81,11 +95,17 @@ def ingest_config_for_camera(
         camera.name,
         stream_url,
     )
+    duration = (
+        segment_duration_seconds
+        if segment_duration_seconds is not None
+        else resolve_chunk_duration_seconds()
+    )
     return CameraIngestConfig(
         camera_id=camera.id,
         stream_url=stream_url,
         ffmpeg_executable=ffmpeg_executable,
-        write_stdout=write_stdout,
+        temp_dir=temp_dir,
+        segment_duration_seconds=duration,
     )
 
 
@@ -93,20 +113,21 @@ def ingest_configs_for_all_active(
     db: Session,
     *,
     ffmpeg_executable: str = DEFAULT_FFMPEG,
+    temp_dir: Path | None = None,
+    segment_duration_seconds: int | None = None,
 ) -> list[CameraIngestConfig]:
-    """Build ingest settings for every active camera (stdout discarded)."""
+    """Build ingest settings for every active camera."""
     cameras = list_active_cameras(db)
-    configs: list[CameraIngestConfig] = []
-    for camera in cameras:
-        configs.append(
-            ingest_config_for_camera(
-                db,
-                camera.id,
-                ffmpeg_executable=ffmpeg_executable,
-                write_stdout=False,
-            )
+    return [
+        ingest_config_for_camera(
+            db,
+            camera.id,
+            ffmpeg_executable=ffmpeg_executable,
+            temp_dir=temp_dir,
+            segment_duration_seconds=segment_duration_seconds,
         )
-    return configs
+        for camera in cameras
+    ]
 
 
 class CameraIngest:
@@ -125,19 +146,21 @@ class CameraIngest:
             self._supervisor.stop()
 
     def run_until_signal(self) -> int:
-        """Receive the stream continuously; restart FFmpeg on crash."""
-        stdout = sys.stdout.buffer if self._config.write_stdout else subprocess.DEVNULL
+        """Receive the stream and write 1-minute MP4 segments until stopped."""
+        chunk_config = chunker_config_for_ingest(self._config)
+        ensure_temp_dir(chunk_config.temp_dir)
         logger.info(
-            "Receiving stream for camera %s from %s (Ctrl+C to stop)",
+            "Chunking camera %s from %s into %ss segments under %s",
             self._config.camera_id,
             self._config.stream_url,
+            chunk_config.segment_duration_seconds,
+            chunk_config.temp_dir,
         )
         run_config = FFmpegRunConfig(
-            build_command=lambda: build_ffmpeg_receive_command(self._config),
+            build_command=lambda: build_ffmpeg_chunk_command(chunk_config),
             restart_on_crash=True,
             restart_delay_seconds=resolve_restart_delay_seconds(),
             max_restarts=resolve_max_restarts(),
-            popen_kwargs={"stdout": stdout},
         )
         self._supervisor = FFmpegSupervisor(run_config)
         return self._supervisor.run_until_signal()
